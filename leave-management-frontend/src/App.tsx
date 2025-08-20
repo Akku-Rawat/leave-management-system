@@ -1,35 +1,63 @@
-import { useState } from 'react'
-import reactLogo from './assets/react.svg'
-import viteLogo from '/vite.svg'
-import './App.css'
+import React, { useState } from "react";
+import Header from "./Components/Header";
+import Sidebar from "./Components/Sidebar";
+import Notification from "./Components/Notification";
+import Dashboard from "./pages/Dashboard";
+import LeaveRequest from "./pages/LeaveRequest";
 
-function App() {
-  const [count, setCount] = useState(0)
-
-  return (
-    <>
-      <div>
-        <a href="https://vite.dev" target="_blank">
-          <img src={viteLogo} className="logo" alt="Vite logo" />
-        </a>
-        <a href="https://react.dev" target="_blank">
-          <img src={reactLogo} className="logo react" alt="React logo" />
-        </a>
-      </div>
-      <h1>Vite + React</h1>
-      <div className="card">
-        <button onClick={() => setCount((count) => count + 1)}>
-          count is {count}
-        </button>
-        <p>
-          Edit <code>src/App.tsx</code> and save to test HMR
-        </p>
-      </div>
-      <p className="read-the-docs">
-        Click on the Vite and React logos to learn more
-      </p>
-    </>
-  )
+export interface LeaveRequestType {
+  id: number;
+  date: string;
+  type: string;
+  start: string;
+  end: string;
+  days: number;
+  status: "Pending" | "Approved" | "Rejected";
+  reason: string;
 }
 
-export default App
+const App: React.FC = () => {
+  const [activeView, setActiveView] = useState<string>("dashboard");
+  const [leaveRequests, setLeaveRequests] = useState<LeaveRequestType[]>([]);
+  const [notification, setNotification] = useState<{ title: string; message: string; type: "success" | "error" | "warning" } | null>(null);
+
+  const addLeaveRequest = (data: Omit<LeaveRequestType, "id" | "date" | "status" | "days"> & { days: number }) => {
+    const newRequest: LeaveRequestType = {
+      id: leaveRequests.length + 1,
+      date: new Date().toISOString().split("T")[0],
+      status: "Pending",
+      ...data,
+    };
+    setLeaveRequests([newRequest, ...leaveRequests]);
+    setNotification({ title: "Success", message: "Leave request submitted successfully!", type: "success" });
+    setActiveView("history");
+  };
+
+  const closeNotification = () => setNotification(null);
+
+  return (
+    <div>
+      <Header />
+      <div className="flex">
+        <Sidebar activeView={activeView} onChangeView={setActiveView} />
+        <main className="flex-1 p-8">
+          {activeView === "dashboard" && <Dashboard />}
+         {/* {activeView === "apply" && <LeaveRequest onSubmit={addLeaveRequest} />} */}
+
+          {/* More pages as needed */}
+        </main>
+      </div>
+      {notification && (
+        <Notification
+          title={notification.title}
+          message={notification.message}
+          type={notification.type}
+          onClose={closeNotification}
+        />
+      )}
+    </div>
+  );
+};
+<div className="bg-red-500 text-white p-10">Test Tailwind</div>
+
+export default App;
