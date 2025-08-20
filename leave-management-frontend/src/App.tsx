@@ -1,9 +1,12 @@
+// App.tsx
 import React, { useState } from "react";
-import Header from "./Components/Header";
-import Sidebar from "./Components/Sidebar";
-import Notification from "./Components/Notification";
+import Header from "./components/Header";
+import Sidebar from "./components/Sidebar";
+import Notification from "./components/Notification";
 import Dashboard from "./pages/Dashboard";
 import LeaveRequest from "./pages/LeaveRequest";
+import History from "./pages/History"
+// import Balance from "./pages/Balance";
 
 export interface LeaveRequestType {
   id: number;
@@ -16,35 +19,72 @@ export interface LeaveRequestType {
   reason: string;
 }
 
+export interface LeaveRequestFormData {
+  type: string;
+  duration: string;
+  startDate: string;
+  endDate: string;
+  reason: string;
+  emergencyContact: string;
+}
+
 const App: React.FC = () => {
   const [activeView, setActiveView] = useState<string>("dashboard");
   const [leaveRequests, setLeaveRequests] = useState<LeaveRequestType[]>([]);
-  const [notification, setNotification] = useState<{ title: string; message: string; type: "success" | "error" | "warning" } | null>(null);
+  const [notification, setNotification] = useState<{
+    title: string;
+    message: string;
+    type: "success" | "error" | "warning";
+  } | null>(null);
 
-  const addLeaveRequest = (data: Omit<LeaveRequestType, "id" | "date" | "status" | "days"> & { days: number }) => {
+  const addLeaveRequest = (data: LeaveRequestFormData) => {
+    const start = new Date(data.startDate);
+    const end = new Date(data.endDate);
+    let days = (end.getTime() - start.getTime()) / (1000 * 3600 * 24) + 1;
+
+    if (data.duration === "half") {
+      days = 0.5;
+    }
+
     const newRequest: LeaveRequestType = {
       id: leaveRequests.length + 1,
       date: new Date().toISOString().split("T")[0],
       status: "Pending",
-      ...data,
+      type: data.type,
+      start: data.startDate,
+      end: data.endDate,
+      days: days,
+      reason: data.reason,
     };
-    setLeaveRequests([newRequest, ...leaveRequests]);
-    setNotification({ title: "Success", message: "Leave request submitted successfully!", type: "success" });
+
+    setLeaveRequests((prev) => [newRequest, ...prev]);
+    setNotification({
+      title: "Success",
+      message: "Leave request submitted successfully!",
+      type: "success",
+    });
     setActiveView("history");
   };
 
   const closeNotification = () => setNotification(null);
 
   return (
-    <div>
+    <div className="min-h-screen flex flex-col">
       <Header />
-      <div className="flex">
+      <div className="flex flex-1">
         <Sidebar activeView={activeView} onChangeView={setActiveView} />
-        <main className="flex-1 p-8">
-          {activeView === "dashboard" && <Dashboard />}
-         {/* {activeView === "apply" && <LeaveRequest onSubmit={addLeaveRequest} />} */}
+        <main className="flex-1 p-8 bg-gray-50 overflow-auto">
+          {activeView === "dashboard" && (
+            <Dashboard setActiveView={setActiveView} />
+          )}
+       {activeView === "apply" && (
+  <LeaveRequest onSubmit={addLeaveRequest} setActiveView={setActiveView} />
+)}
 
-          {/* More pages as needed */}
+          {activeView === "History" && (
+            <History leaveRequests={leaveRequests} />
+          )}
+          {/* {activeView === "balance" && <Balance />} } */}
         </main>
       </div>
       {notification && (
@@ -58,6 +98,5 @@ const App: React.FC = () => {
     </div>
   );
 };
-<div className="bg-red-500 text-white p-10">Test Tailwind</div>
 
 export default App;
