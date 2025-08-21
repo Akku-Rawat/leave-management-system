@@ -5,8 +5,8 @@ import Sidebar from "./components/Sidebar";
 import Notification from "./components/Notification";
 import Dashboard from "./pages/Dashboard";
 import LeaveRequest from "./pages/LeaveRequest";
-import History from "./pages/History"
-// import Balance from "./pages/Balance";
+import History from "./pages/History";
+import ApplyLeave from "./pages/ApplyLeave"; // ✅ ApplyLeave import added
 
 export interface LeaveRequestType {
   id: number;
@@ -37,6 +37,9 @@ const App: React.FC = () => {
     type: "success" | "error" | "warning";
   } | null>(null);
 
+  // ✅ New state for showing submit success overlay
+  const [submitSuccess, setSubmitSuccess] = useState<LeaveRequestFormData | null>(null);
+
   const addLeaveRequest = (data: LeaveRequestFormData) => {
     const start = new Date(data.startDate);
     const end = new Date(data.endDate);
@@ -58,12 +61,9 @@ const App: React.FC = () => {
     };
 
     setLeaveRequests((prev) => [newRequest, ...prev]);
-    setNotification({
-      title: "Success",
-      message: "Leave request submitted successfully!",
-      type: "success",
-    });
-    setActiveView("history");
+
+    // ✅ Show submit success message instead of history
+    setSubmitSuccess(data);
   };
 
   const closeNotification = () => setNotification(null);
@@ -74,19 +74,51 @@ const App: React.FC = () => {
       <div className="flex flex-1">
         <Sidebar activeView={activeView} onChangeView={setActiveView} />
         <main className="flex-1 p-8 bg-gray-50 overflow-auto">
-          {activeView === "dashboard" && (
-            <Dashboard setActiveView={setActiveView} />
+         {activeView === "dashboard" && <Dashboard />}
+
+
+          {activeView === "apply" && (
+            <LeaveRequest
+              setActiveView={setActiveView} // ✅ remove onSubmit
+            />
           )}
-       {activeView === "apply" && (
-  <LeaveRequest onSubmit={addLeaveRequest} setActiveView={setActiveView} />
+
+         {activeView === "applyleave" && (
+  <>
+    {submitSuccess ? (
+      <div className="bg-green-100 border border-green-400 text-green-800 p-8 rounded-xl text-center max-w-2xl mx-auto">
+        <h2 className="text-2xl font-bold mb-4">Leave Submitted Successfully!</h2>
+        <p className="mb-6">Your leave request has been submitted.</p>
+        <button
+          onClick={() => {
+            setSubmitSuccess(null);
+            setActiveView("history");
+          }}
+          className="px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+        >
+          Go to Leave History
+        </button>
+      </div>
+    ) : (
+      <ApplyLeave
+        onSubmit={addLeaveRequest}
+        setActiveView={setActiveView}
+      />
+    )}
+  </>
 )}
 
-          {activeView === "History" && (
+
+          {/* ✅ Only show History when activeView="history" */}
+          {activeView === "history" && (
             <History leaveRequests={leaveRequests} />
           )}
-          {/* {activeView === "balance" && <Balance />} } */}
+
+       
+
         </main>
       </div>
+
       {notification && (
         <Notification
           title={notification.title}
