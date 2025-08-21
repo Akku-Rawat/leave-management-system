@@ -55,7 +55,7 @@ const Sidebar: React.FC<SidebarProps> = ({ activeView, onChangeView }) => {
                     : ""
                 }`}
               >
-                <i className={`${icon} mr-3 text-lg`} />
+                <i className={`fas ${icon} mr-3 text-lg`} />
                 {isOpen && <span>{label}</span>}
               </button>
             ))}

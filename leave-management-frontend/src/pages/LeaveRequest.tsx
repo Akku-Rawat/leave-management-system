@@ -89,17 +89,17 @@ const LeaveRequest: React.FC<LeaveRequestProps> = ({ setActiveView }) => (
               <i className="fas fa-eye text-gray-600 mr-3"></i>
               <span className="text-gray-700">View Leave History</span>
             </button>
-            <button
+            {/* <button
               className="w-full flex items-center p-3 bg-green-50 hover:bg-green-100 rounded-lg transition-colors"
             >
               <i className="fas fa-chart-bar text-green-600 mr-3"></i>
               <span className="text-gray-700">Check Leave Balance</span>
-            </button>
+            </button> */}
           </div>
         </div>
 
         {/* Recent Activities */}
-        <div className="bg-white p-6 rounded-xl shadow-lg">
+        {/* <div className="bg-white p-6 rounded-xl shadow-lg">
           <h3 className="text-lg font-semibold text-gray-900 mb-4">
             Recent Activities
           </h3>
@@ -129,10 +129,9 @@ const LeaveRequest: React.FC<LeaveRequestProps> = ({ setActiveView }) => (
               </div>
             </div>
           </div>
-        </div>
+        </div> */}
       </div>
     </div>
-    {/* End Main Container Card */}
   </>
 );
 

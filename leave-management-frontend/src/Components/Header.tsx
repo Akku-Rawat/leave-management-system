@@ -6,7 +6,7 @@ const USER_ICON_SIZE = 32;  // consistent icon size
 
 const Header: React.FC = () => (
   <header className="bg-white shadow-md border-b">
-    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+   <div className="w-full px-4 sm:px-6 lg:px-8">
       <div className="flex justify-between items-center py-4">
         {/* Logo + Brand with R circle */}
         <div className="flex items-center gap-3">

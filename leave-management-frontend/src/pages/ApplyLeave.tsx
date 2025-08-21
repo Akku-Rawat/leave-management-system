@@ -147,7 +147,7 @@ const ApplyLeave: React.FC<ApplyLeaveProps> = ({ onSubmit, setActiveView }) => {
           />
         </div>
 
-        {/* Emergency Contact */}
+        {/* Emergency Contact
         <div className="flex-1 min-w-[250px] bg-gray-50 p-4 rounded-xl shadow">
           <label
             htmlFor="emergencyContact"
@@ -163,7 +163,7 @@ const ApplyLeave: React.FC<ApplyLeaveProps> = ({ onSubmit, setActiveView }) => {
             placeholder="Phone number"
             className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
           />
-        </div>
+        </div> */}
 
         {/* Buttons */}
         <div className="w-full flex justify-between items-center mt-4">

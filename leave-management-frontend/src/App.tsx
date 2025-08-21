@@ -6,7 +6,9 @@ import Notification from "./components/Notification";
 import Dashboard from "./pages/Dashboard";
 import LeaveRequest from "./pages/LeaveRequest";
 import History from "./pages/History";
-import ApplyLeave from "./pages/ApplyLeave"; // ✅ ApplyLeave import added
+import ApplyLeave from "./pages/ApplyLeave"; 
+import Calendar from "./pages/Calendar";
+
 
 export interface LeaveRequestType {
   id: number;
@@ -65,6 +67,11 @@ const App: React.FC = () => {
     // ✅ Show submit success message instead of history
     setSubmitSuccess(data);
   };
+  // Handle calendar date double click to open apply leave
+  const handleDateDoubleClick = (date: string) => {
+    setLeaveFormStartDate(date);
+    setActiveView("applyleave");
+  };
 
   const closeNotification = () => setNotification(null);
 
@@ -73,7 +80,7 @@ const App: React.FC = () => {
       <Header />
       <div className="flex flex-1">
         <Sidebar activeView={activeView} onChangeView={setActiveView} />
-        <main className="flex-1 p-8 bg-gray-50 overflow-auto">
+        <main className="flex-1 p-8 bg-gray-50 overflow-hidden">
          {activeView === "dashboard" && <Dashboard />}
 
 
@@ -113,8 +120,9 @@ const App: React.FC = () => {
           {activeView === "history" && (
             <History leaveRequests={leaveRequests} />
           )}
-
-       
+          {activeView === "calendar" && (
+            <Calendar leaveRequests={leaveRequests}  onDoubleClick={handleDateDoubleClick} />
+          )}
 
         </main>
       </div>
