@@ -10,7 +10,7 @@ const Sidebar: React.FC<SidebarProps> = ({ activeView, onChangeView }) => {
 
   const buttons = [
     { id: "apply", icon: "fas fa-plus-circle", label: "Apply Leave" },
-    { id: "calendar", icon: "fas fa-calendar", label: "Calendar View" },
+     { id: "history", icon: "fas fa-history", label: "History" },
   ];
 
   return (

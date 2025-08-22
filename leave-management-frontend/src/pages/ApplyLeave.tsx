@@ -1,210 +1,191 @@
-import React, { useState } from "react";
+// import React, { useState, useEffect } from "react";
 
-interface LeaveRequestData {
-  type: string;
-  duration: string;
-  startDate: string;
-  endDate: string;
-  reason: string;
-  emergencyContact: string;
-}
+// export interface LeaveRequestData {
+//   type: string;
+//   duration: string;
+//   startDate: string;
+//   endDate: string;
+//   reason: string;
+//   emergencyContact: string;
+// }
 
-interface ApplyLeaveProps {
-  onSubmit: (data: LeaveRequestData) => void;
-  setActiveView: (view: string) => void;
-}
+// interface ApplyLeaveProps {
+//   onSubmit: (data: LeaveRequestData) => void;
+//   setActiveView: (view: string) => void;
+//   initialStartDate?: string;
+//   initialEndDate?: string;
+// }
 
-const ApplyLeave: React.FC<ApplyLeaveProps> = ({ onSubmit, setActiveView }) => {
-  const [formData, setFormData] = useState<LeaveRequestData>({
-    type: "",
-    duration: "full",
-    startDate: "",
-    endDate: "",
-    reason: "",
-    emergencyContact: "",
-  });
+// const ApplyLeave: React.FC<ApplyLeaveProps> = ({
+//   onSubmit,
+//   setActiveView,
+//   initialStartDate = "",
+//   initialEndDate = "",
+// }) => {
+//   const [formData, setFormData] = useState<LeaveRequestData>({
+//     type: "",
+//     duration: "full",
+//     startDate: initialStartDate,
+//     endDate: initialEndDate,
+//     reason: "",
+//     emergencyContact: "",
+//   });
 
-  const handleChange = (
-    e: React.ChangeEvent<
-      HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement
-    >
-  ) => {
-    const { id, value } = e.target;
-    setFormData((prev) => ({ ...prev, [id]: value }));
-  };
+//   useEffect(() => {
+//     setFormData(prev => ({
+//       ...prev,
+//       startDate: initialStartDate,
+//       endDate: initialEndDate,
+//     }));
+//   }, [initialStartDate, initialEndDate]);
 
- const handleSubmit = (e: React.FormEvent) => {
-  e.preventDefault();
-  onSubmit(formData);
-};
+//   const handleChange = (
+//     e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>
+//   ) => {
+//     const { id, value } = e.target;
+//     setFormData(prev => ({ ...prev, [id]: value }));
+//   };
 
+//   const handleSubmit = (e: React.FormEvent) => {
+//     e.preventDefault();
+//     onSubmit(formData);
+//   };
 
-  return (
-    <div className="mb-8 max-w-6xl mx-auto bg-white p-8 rounded-xl shadow-lg">
-      <h2 className="text-3xl font-bold text-gray-900 mb-2">Apply for Leave</h2>
-      <p className="text-gray-600 mb-6">
-        Submit a new leave request for approval.
-      </p>
+//   return (
+//     <div className="max-w-xl mx-auto bg-white p-8 shadow rounded">
+//       <h2 className="text-2xl font-semibold mb-6">Apply for Leave</h2>
+//       <form onSubmit={handleSubmit} className="space-y-4">
+//         <div>
+//           <label htmlFor="type" className="block font-medium mb-1">
+//             Leave Type
+//           </label>
+//           <select
+//             id="type"
+//             value={formData.type}
+//             onChange={handleChange}
+//             required
+//             className="w-full border rounded p-2"
+//           >
+//             <option value="">Select leave type</option>
+//             <option value="Annual Leave">Annual Leave</option>
+//             <option value="Sick Leave">Sick Leave</option>
+//             <option value="Emergency Leave">Emergency Leave</option>
+//             <option value="Maternity/Paternity">Maternity/Paternity</option>
+//           </select>
+//         </div>
 
-      <form onSubmit={handleSubmit} className="flex flex-wrap gap-6">
-        {/* Leave Type */}
-        <div className="flex-1 min-w-[250px] bg-gray-50 p-4 rounded-xl shadow">
-          <label
-            htmlFor="type"
-            className="block text-sm font-medium text-gray-700 mb-2"
-          >
-            Leave Type
-          </label>
-          <select
-            id="type"
-            value={formData.type}
-            onChange={handleChange}
-            className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-            required
-          >
-            <option value="">Select leave type</option>
-            <option value="Annual Leave">Annual Leave</option>
-            <option value="Sick Leave">Sick Leave</option>
-            <option value="Emergency Leave">Emergency Leave</option>
-            <option value="Maternity/Paternity">Maternity/Paternity</option>
-          </select>
-        </div>
+//         <div>
+//           <label htmlFor="duration" className="block font-medium mb-1">
+//             Duration
+//           </label>
+//           <select
+//             id="duration"
+//             value={formData.duration}
+//             onChange={handleChange}
+//             required
+//             className="w-full border rounded p-2"
+//           >
+//             <option value="full">Full Day</option>
+//             <option value="half">First Half</option>
+//             <option value="half">Second Half</option>
+//           </select>
+//         </div>
 
-        {/* Duration */}
-        <div className="flex-1 min-w-[250px] bg-gray-50 p-4 rounded-xl shadow">
-          <label
-            htmlFor="duration"
-            className="block text-sm font-medium text-gray-700 mb-2"
-          >
-            Duration
-          </label>
-          <select
-            id="duration"
-            value={formData.duration}
-            onChange={handleChange}
-            className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-          >
-            <option value="full">Full Day</option>
-            <option value="firstHalf">First Half</option>
-            <option value="secondHalf">Second Half</option>
-          </select>
-        </div>
+//         <div>
+//           <label htmlFor="startDate" className="block font-medium mb-1">
+//             Start Date
+//           </label>
+//           <input
+//             id="startDate"
+//             type="date"
+//             value={formData.startDate}
+//             onChange={handleChange}
+//             required
+//             className="w-full border rounded p-2"
+//             min={new Date().toISOString().split("T")[0]}
+//           />
+//         </div>
 
-        {/* Start Date */}
-        <div className="flex-1 min-w-[250px] bg-gray-50 p-4 rounded-xl shadow">
-          <label
-            htmlFor="startDate"
-            className="block text-sm font-medium text-gray-700 mb-2"
-          >
-            Start Date
-          </label>
-          <input
-            type="date"
-            id="startDate"
-            value={formData.startDate}
-            min={new Date().toISOString().split("T")[0]}
-            onChange={handleChange}
-            className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-            required
-          />
-        </div>
+//         <div>
+//           <label htmlFor="endDate" className="block font-medium mb-1">
+//             End Date
+//           </label>
+//           <input
+//             id="endDate"
+//             type="date"
+//             value={formData.endDate}
+//             onChange={handleChange}
+//             required
+//             className="w-full border rounded p-2"
+//             min={formData.startDate || new Date().toISOString().split("T")[0]}
+//           />
+//         </div>
 
-        {/* End Date */}
-        <div className="flex-1 min-w-[250px] bg-gray-50 p-4 rounded-xl shadow">
-          <label
-            htmlFor="endDate"
-            className="block text-sm font-medium text-gray-700 mb-2"
-          >
-            End Date
-          </label>
-          <input
-            type="date"
-            id="endDate"
-            value={formData.endDate}
-            min={formData.startDate || new Date().toISOString().split("T")[0]}
-            onChange={handleChange}
-            className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-            required
-          />
-        </div>
+//         <div>
+//           <label htmlFor="reason" className="block font-medium mb-1">
+//             Reason
+//           </label>
+//           <textarea
+//             id="reason"
+//             value={formData.reason}
+//             onChange={handleChange}
+//             required
+//             className="w-full border rounded p-2"
+//             rows={4}
+//             placeholder="Reason for leave"
+//           />
+//         </div>
 
-        {/* Reason */}
-        <div className="flex-1 min-w-[350px] bg-gray-50 p-4 rounded-xl shadow">
-          <label
-            htmlFor="reason"
-            className="block text-sm font-medium text-gray-700 mb-2"
-          >
-            Reason
-          </label>
-          <textarea
-            id="reason"
-            rows={4}
-            value={formData.reason}
-            onChange={handleChange}
-            placeholder="Please provide a reason for your leave request..."
-            className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-            required
-          />
-        </div>
+//         <div>
+//           <label htmlFor="emergencyContact" className="block font-medium mb-1">
+//             Emergency Contact (Optional)
+//           </label>
+//           <input
+//             id="emergencyContact"
+//             type="tel"
+//             value={formData.emergencyContact}
+//             onChange={handleChange}
+//             className="w-full border rounded p-2"
+//             placeholder="Enter a phone number"
+//           />
+//         </div>
 
-        {/* Emergency Contact
-        <div className="flex-1 min-w-[250px] bg-gray-50 p-4 rounded-xl shadow">
-          <label
-            htmlFor="emergencyContact"
-            className="block text-sm font-medium text-gray-700 mb-2"
-          >
-            Emergency Contact (Optional)
-          </label>
-          <input
-            type="tel"
-            id="emergencyContact"
-            value={formData.emergencyContact}
-            onChange={handleChange}
-            placeholder="Phone number"
-            className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-          />
-        </div> */}
+//         <div className="flex justify-between">
+//           <button
+//             type="button"
+//             onClick={() => setActiveView("dashboard")}
+//             className="px-4 py-2 bg-gray-200 rounded hover:bg-gray-300"
+//           >
+//             ← Back
+//           </button>
+//           <div className="space-x-4">
+//             <button
+//               type="reset"
+//               onClick={() =>
+//                 setFormData({
+//                   type: "",
+//                   duration: "full",
+//                   startDate: initialStartDate,
+//                   endDate: initialEndDate,
+//                   reason: "",
+//                   emergencyContact: "",
+//                 })
+//               }
+//               className="px-6 py-2 border border-gray-300 rounded hover:bg-gray-50"
+//             >
+//               Reset
+//             </button>
+//             <button
+//               type="submit"
+//               className="px-6 py-2 bg-blue-600 text-white rounded hover:bg-blue-700"
+//             >
+//               Submit Request
+//             </button>
+//           </div>
+//         </div>
+//       </form>
+//     </div>
+//   );
+// };
 
-        {/* Buttons */}
-        <div className="w-full flex justify-between items-center mt-4">
-          {/* Back Button */}
-          <button
-            onClick={() => setActiveView("dashboard")}
-            className="px-4 py-2 bg-gray-200 rounded-lg hover:bg-gray-300"
-          >
-            ← Back
-          </button>
-
-          {/* Reset + Submit */}
-          <div className="flex space-x-4">
-            <button
-              type="reset"
-              onClick={() =>
-                setFormData({
-                  type: "",
-                  duration: "full",
-                  startDate: "",
-                  endDate: "",
-                  reason: "",
-                  emergencyContact: "",
-                })
-              }
-              className="px-6 py-3 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors"
-            >
-              Reset
-            </button>
-
-            <button
-              type="submit"
-              className="px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
-            >
-              Submit Request
-            </button>
-          </div>
-        </div>
-      </form>
-    </div>
-  );
-};
-
-export default ApplyLeave;
+// export default ApplyLeave;

@@ -1,14 +1,15 @@
-// App.tsx
 import React, { useState } from "react";
+
 import Header from "./components/Header";
 import Sidebar from "./components/Sidebar";
 import Notification from "./components/Notification";
+
 import Dashboard from "./pages/Dashboard";
 import LeaveRequest from "./pages/LeaveRequest";
 import History from "./pages/History";
-import ApplyLeave from "./pages/ApplyLeave"; 
-import Calendar from "./pages/Calendar";
+// import ApplyLeave from "./pages/ApplyLeave";
 
+import AppRoutes from "./AppRoutes";
 
 export interface LeaveRequestType {
   id: number;
@@ -24,14 +25,14 @@ export interface LeaveRequestType {
 export interface LeaveRequestFormData {
   type: string;
   duration: string;
-  startDate: string;
-  endDate: string;
+  start: string;
+  end: string;
   reason: string;
   emergencyContact: string;
 }
 
 const App: React.FC = () => {
-  const [activeView, setActiveView] = useState<string>("dashboard");
+  const [activeView, setActiveView] = useState("dashboard");
   const [leaveRequests, setLeaveRequests] = useState<LeaveRequestType[]>([]);
   const [notification, setNotification] = useState<{
     title: string;
@@ -39,38 +40,57 @@ const App: React.FC = () => {
     type: "success" | "error" | "warning";
   } | null>(null);
 
-  // ✅ New state for showing submit success overlay
-  const [submitSuccess, setSubmitSuccess] = useState<LeaveRequestFormData | null>(null);
+  // New state to track if form was just successfully submitted
+  const [submitSuccess, setSubmitSuccess] = useState(false);
 
+  // Store previous view to go back properly
+  const [lastView, setLastView] = useState("Lea");
+
+  // Update activeView with lastView tracking
+  const handleChangeView = (view: string) => {
+    setLastView(activeView);
+    setActiveView(view);
+  };
+
+  // Submit handler for leave request
   const addLeaveRequest = (data: LeaveRequestFormData) => {
-    const start = new Date(data.startDate);
-    const end = new Date(data.endDate);
+    const start = new Date(data.start);
+    const end = new Date(data.end);
     let days = (end.getTime() - start.getTime()) / (1000 * 3600 * 24) + 1;
 
-    if (data.duration === "half") {
-      days = 0.5;
-    }
+    if (data.duration === "half") days = 0.5;
 
     const newRequest: LeaveRequestType = {
       id: leaveRequests.length + 1,
       date: new Date().toISOString().split("T")[0],
       status: "Pending",
       type: data.type,
-      start: data.startDate,
-      end: data.endDate,
-      days: days,
+      start: data.start,
+      end: data.end,
+      days,
       reason: data.reason,
     };
 
     setLeaveRequests((prev) => [newRequest, ...prev]);
-
-    // ✅ Show submit success message instead of history
-    setSubmitSuccess(data);
+    setNotification({
+      title: "Success",
+      message: "Leave request submitted successfully!",
+      type: "success",
+    });
+    setSubmitSuccess(true);
+    // Do NOT change view immediately, show success message instead
   };
-  // Handle calendar date double click to open apply leave
-  const handleDateDoubleClick = (date: string) => {
-    setLeaveFormStartDate(date);
-    setActiveView("applyleave");
+
+  // Handler for "Go to History"
+  const goToHistory = () => {
+    setSubmitSuccess(false);
+    setActiveView("history");
+  };
+
+  // Handler for "Back" button in success screen
+  const goBack = () => {
+    setSubmitSuccess(false);
+    setActiveView(lastView);
   };
 
   const closeNotification = () => setNotification(null);
@@ -79,51 +99,41 @@ const App: React.FC = () => {
     <div className="min-h-screen flex flex-col">
       <Header />
       <div className="flex flex-1">
-        <Sidebar activeView={activeView} onChangeView={setActiveView} />
-        <main className="flex-1 p-8 bg-gray-50 overflow-hidden">
-         {activeView === "dashboard" && <Dashboard />}
+        <Sidebar activeView={activeView} onChangeView={handleChangeView} />
 
+        <main className="flex-1 p-6 bg-gray-50 overflow-auto">
+          {/* {activeView === "dashboard" && <Dashboard setActiveView={handleChangeView} />} */}
 
           {activeView === "apply" && (
-            <LeaveRequest
-              setActiveView={setActiveView} // ✅ remove onSubmit
-            />
+            <>
+              {submitSuccess ? (
+                <div className="max-w-xl mx-auto bg-green-100 border border-green-400 text-green-800 p-8 rounded-lg text-center">
+                  <h2 className="text-2xl font-bold mb-4">Leave Submitted Successfully!</h2>
+                  <p className="mb-6">Your leave request has been submitted.</p>
+                  <div className="flex justify-center gap-4">
+                    <button
+                      onClick={goBack}
+                      className="px-6 py-2 rounded border border-gray-600 hover:bg-gray-200 transition"
+                    >
+                      Back
+                    </button>
+                    <button
+                      onClick={goToHistory}
+                      className="px-6 py-2 rounded bg-blue-600 text-white hover:bg-blue-700 transition"
+                    >
+                      Go to History
+                    </button>
+                  </div>
+                </div>
+              ) : (
+                <LeaveRequest onSubmit={addLeaveRequest} setActiveView={handleChangeView} />
+              )}
+            </>
           )}
 
-         {activeView === "applyleave" && (
-  <>
-    {submitSuccess ? (
-      <div className="bg-green-100 border border-green-400 text-green-800 p-8 rounded-xl text-center max-w-2xl mx-auto">
-        <h2 className="text-2xl font-bold mb-4">Leave Submitted Successfully!</h2>
-        <p className="mb-6">Your leave request has been submitted.</p>
-        <button
-          onClick={() => {
-            setSubmitSuccess(null);
-            setActiveView("history");
-          }}
-          className="px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
-        >
-          Go to Leave History
-        </button>
-      </div>
-    ) : (
-      <ApplyLeave
-        onSubmit={addLeaveRequest}
-        setActiveView={setActiveView}
-      />
-    )}
-  </>
-)}
+          {activeView === "history" && <History leaveRequests={leaveRequests} />}
 
-
-          {/* ✅ Only show History when activeView="history" */}
-          {activeView === "history" && (
-            <History leaveRequests={leaveRequests} />
-          )}
-          {activeView === "calendar" && (
-            <Calendar leaveRequests={leaveRequests}  onDoubleClick={handleDateDoubleClick} />
-          )}
-
+          {/* Add other views if needed */}
         </main>
       </div>
 
