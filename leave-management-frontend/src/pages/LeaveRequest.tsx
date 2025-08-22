@@ -1,4 +1,5 @@
 import React, { useState } from "react";
+import AdvancedCalendar from './Calendar';
 
 interface LeaveRequestData {
   type: string;
@@ -23,6 +24,48 @@ const LeaveRequest: React.FC<LeaveRequestProps> = ({ onSubmit, setActiveView }) 
     reason: "",
     emergencyContact: "",
   });
+const dummyLeaves = [
+  { start: new Date("2025-08-10"), end: new Date("2025-08-12"), status: "approved" },
+  { start: new Date("2025-08-15"), end: new Date("2025-08-16"), status: "pending" },
+];
+
+// Calendar se selected range form me dalna
+const formatDate = (date: Date) => {
+  const yyyy = date.getFullYear();
+  const mm = String(date.getMonth() + 1).padStart(2, "0");
+  const dd = String(date.getDate()).padStart(2, "0");
+  return `${yyyy}-${mm}-${dd}`;
+};
+
+const handleRangeSelect = (range: { from?: Date; to?: Date } | undefined) => {
+  if (!range) return;
+  if (range.from && range.to) {
+    const start = range.from < range.to ? range.from : range.to;
+    const end = range.to > range.from ? range.to : range.from;
+    setFormData((prev) => ({
+      ...prev,
+      startDate: formatDate(start),
+      endDate: formatDate(end),
+    }));
+  } else if (range.from) {
+    setFormData((prev) => ({
+      ...prev,
+      startDate: formatDate(range.from),
+      endDate: "",
+    }));
+  } else {
+    setFormData((prev) => ({
+      ...prev,
+      startDate: "",
+      endDate: "",
+    }));
+  }
+};
+
+
+<div className="border-2 border-red-500 rounded-lg p-2" style={{ minWidth: 350 }}>
+  <AdvancedCalendar leaves={dummyLeaves} onRangeSelect={handleRangeSelect} />
+</div>
 
   const handleChange = (
     e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>
@@ -61,8 +104,20 @@ const LeaveRequest: React.FC<LeaveRequestProps> = ({ onSubmit, setActiveView }) 
               <p className="text-sm text-gray-600 mb-1">Remaining</p>
               <p className="text-xl font-bold text-gray-900">20</p>
             </div>
+             
+    <AdvancedCalendar leaves={dummyLeaves} onRangeSelect={handleRangeSelect} />
+    <style>{`
+      .rdp { width: 100% !important; max-width: 340px; }
+      .rdp-table { table-layout: fixed !important; width: 100% !important; }
+      .rdp-day { padding: 0.5em !important; }
+    `}</style>
+
+            
           </div>
+          
+
         </div>
+        
 
         {/* RIGHT SIDE (60%) -> Form */}
         <div className="w-3/5 p-6">
