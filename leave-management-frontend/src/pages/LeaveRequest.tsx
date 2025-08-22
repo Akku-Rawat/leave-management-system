@@ -82,10 +82,11 @@ const handleRangeSelect = (range: { from?: Date; to?: Date } | undefined) => {
   return (
     <div className="w-full min-h-screen bg-gray-50 p-6 flex justify-center items-start">
       {/* Main Card (no overflow now) */}
-      <div className="bg-white rounded-2xl shadow-xl flex w-11/12 max-w-6xl min-h-[500px] mx-auto">
+      <div className="bg-white rounded-2xl shadow-xl flex w-11/12 max-w-6xl h-fit mx-auto">
+
         
         {/* LEFT SIDE (40%) */}
-        <div className="w-2/5 p-6 border-r flex flex-col justify-start mt-6">
+        <div className="w-2/5 p-6  flex flex-col justify-start mt-6">
           {/* Stats */}
           <div className="w-30 h-40 grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
             <div className="bg-white shadow-md rounded-xl p-6 h-32 flex flex-col justify-center border-l-4 border-blue-500">
