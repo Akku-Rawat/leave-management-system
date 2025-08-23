@@ -2,9 +2,9 @@ import React, { useState } from "react";
 
 import Header from "./components/Header";
 import Sidebar from "./components/Sidebar";
-import Notification from "./components/Notification";
+// import Notification from "./components/Notification";
 
-import Dashboard from "./pages/Dashboard";
+// import Dashboard from "./pages/Dashboard";
 import LeaveRequest from "./pages/LeaveRequest";
 import History from "./pages/History";
 // import ApplyLeave from "./pages/ApplyLeave";
@@ -44,7 +44,7 @@ const App: React.FC = () => {
   const [submitSuccess, setSubmitSuccess] = useState(false);
 
   // Store previous view to go back properly
-  const [lastView, setLastView] = useState("Lea");
+  const [lastView, setLastView] = useState("LeaveRequestData");
 
   // Update activeView with lastView tracking
   const handleChangeView = (view: string) => {
@@ -137,14 +137,7 @@ const App: React.FC = () => {
         </main>
       </div>
 
-      {notification && (
-        <Notification
-          title={notification.title}
-          message={notification.message}
-          type={notification.type}
-          onClose={closeNotification}
-        />
-      )}
+   
     </div>
   );
 };

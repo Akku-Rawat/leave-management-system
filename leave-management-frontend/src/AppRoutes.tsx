@@ -8,7 +8,7 @@ import Notification from "./components/Notification";
 import LeaveRequest from "./pages/LeaveRequest";
 import History from "./pages/History";
 // import ApplyLeave from "./pages/ApplyLeave";
-// import Calendar from "./pages/Calendar";
+import Calendar from "./pages/Calendar";
 
 export interface LeaveRequestType {
   id: number;

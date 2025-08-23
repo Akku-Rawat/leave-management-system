@@ -80,40 +80,36 @@ const handleRangeSelect = (range: { from?: Date; to?: Date } | undefined) => {
   };
 
   return (
-    <div className="w-full min-h-screen bg-gray-50 p-6 flex justify-center items-start">
+    <div className="w-full min-h-screen bg-gray-50 p-1 flex justify-center items-start">
       {/* Main Card (no overflow now) */}
-      <div className="bg-white rounded-2xl shadow-xl flex w-11/12 max-w-6xl h-fit mx-auto">
+      <div className="bg-white rounded-2xl shadow-xl flex w-11/12 max-w-6xl h-[690px] mx-auto">
 
         
         {/* LEFT SIDE (40%) */}
         <div className="w-2/5 p-6  flex flex-col justify-start mt-6">
           {/* Stats */}
           <div className="w-30 h-40 grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
-            <div className="bg-white shadow-md rounded-xl p-6 h-32 flex flex-col justify-center border-l-4 border-blue-500">
+            <div className="bg-white shadow-md rounded-xl p-6 w-[180px] h-32 flex flex-col justify-center border-l-4 border-blue-500">
               <p className="text-sm text-gray-600 mb-1">Total Leave Balance</p>
               <p className="text-xl font-bold text-gray-900">30 Days</p>
             </div>
-            <div className="bg-white shadow-md rounded-xl p-6 h-32 flex flex-col justify-center border-l-4 border-green-500">
+            <div className="bg-white shadow-md rounded-xl  p-6 w-[180px] h-32 flex flex-col justify-center border-l-4 border-green-500">
               <p className="text-sm text-gray-600 mb-1">Used This Year</p>
               <p className="text-xl font-bold text-gray-900">10 Days</p>
             </div>
-            <div className="bg-white shadow-md rounded-xl p-6 h-32 flex flex-col justify-center border-l-4 border-yellow-500">
+            <div className="bg-white shadow-md rounded-xl p-6 w-[180px] h-32 flex flex-col justify-center border-l-4 border-yellow-500">
               <p className="text-sm text-gray-600 mb-1">Pending Requests</p>
               <p className="text-xl font-bold text-gray-900">8</p>
             </div>
-            <div className="bg-white shadow-md rounded-xl p-6 h-32 flex flex-col justify-center border-l-4 border-purple-500">
+            <div className="bg-white shadow-md rounded-xl p-6 w-[180px] h-32 flex flex-col justify-center border-l-4 border-purple-500">
               <p className="text-sm text-gray-600 mb-1">Remaining</p>
               <p className="text-xl font-bold text-gray-900">20</p>
             </div>
-             
-    <AdvancedCalendar leaves={dummyLeaves} onRangeSelect={handleRangeSelect} />
-    <style>{`
-      .rdp { width: 100% !important; max-width: 340px; }
-      .rdp-table { table-layout: fixed !important; width: 100% !important; }
-      .rdp-day { padding: 0.5em !important; }
-    `}</style>
 
-            
+    <div className="p-4 bg-white rounded-xl shadow-md h-[340px] w-[390px] flex items-center justify-center">
+      <AdvancedCalendar leaves={dummyLeaves} onRangeSelect={handleRangeSelect} />
+    </div>
+
           </div>
           
 
@@ -122,7 +118,7 @@ const handleRangeSelect = (range: { from?: Date; to?: Date } | undefined) => {
 
         {/* RIGHT SIDE (60%) -> Form */}
         <div className="w-3/5 p-6">
-          <div className="mb-8 bg-white p-6 rounded-xl shadow-md h-full">
+          <div className="mb-8 bg-white p-6 rounded-xl shadow-md h-[650px]">
             <h2 className="text-2xl font-bold text-gray-900 mb-2">Apply for Leave</h2>
             <p className="text-gray-600 mb-6">
               Submit a new leave request for approval.
