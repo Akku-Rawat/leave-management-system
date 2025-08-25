@@ -2,38 +2,24 @@ import React, { useState } from "react";
 
 import Header from "./components/Header";
 import Sidebar from "./components/Sidebar";
-import Notification from "./components/Notification";
+import NotificationScreen from "./components/Notification";
 
 
 import LeaveRequest from "./pages/LeaveRequest";
 import History from "./pages/History";
 // import ApplyLeave from "./pages/ApplyLeave";
 import Calendar from "./pages/Calendar";
+import type { LeaveRequestType } from "./Types";
+import type { LeaveRequestFormData } from "./Types";
 
-export interface LeaveRequestType {
-  id: number;
-  date: string;
-  type: string;
-  start: string;
-  end: string;
-  days: number;
-  status: "Pending" | "Approved" | "Rejected";
-  reason: string;
-}
 
-export interface LeaveRequestFormData {
-  type: string;
-  duration: string;
-  startDate: string;
-  endDate: string;
-  reason: string;
-  emergencyContact: string;
-}
 
-const App: React.FC = () => {
+
+
+const AppRoutes: React.FC = () => {
   const [activeView, setActiveView] = useState("dashboard");
   const [leaveRequests, setLeaveRequests] = useState<LeaveRequestType[]>([]);
-  const [notification, setNotification] = useState<{ title: string; message: string; type: "success" | "error" | "warning"; } | null>(null);
+  // const [notification, setNotification] = useState<{ title: string; message: string; type: "success" | "error" | "warning"; } | null>(null);
 
  
 
@@ -54,13 +40,13 @@ const App: React.FC = () => {
       reason: data.reason,
     };
 
-    setLeaveRequests(prev => [newRequest, ...prev]);
-    setNotification({
-      title: "Success",
-      message: "Leave request submitted successfully!",
-      type: "success",
-    });
-    setActiveView("history");
+     setLeaveRequests(prev => [newRequest, ...prev]);
+    // setNotification({
+    //   title: "Success",
+    //   message: "Leave request submitted successfully!",
+    //   type: "success",
+    // });
+    // setActiveView("history");
   };
 
   // const handleDateRangeSelect = (start: string, end: string) => {
@@ -69,7 +55,7 @@ const App: React.FC = () => {
   //   setActiveView("applyleave");
   // };
 
-  const closeNotification = () => setNotification(null);
+  // const closeNotification = () => setNotification(null);
 
   return (
     <div className="min-h-screen flex flex-col">
@@ -95,16 +81,9 @@ const App: React.FC = () => {
         </main>
       </div>
 
-      {notification && (
-        <Notification
-          title={notification.title}
-          message={notification.message}
-          type={notification.type}
-          onClose={closeNotification}
-        />
-      )}
+     
     </div>
   );
 };
 
-export default App;
+export default AppRoutes;

@@ -25,10 +25,9 @@ const LeaveRequest: React.FC<LeaveRequestProps> = ({ onSubmit, setActiveView }) 
     emergencyContact: "",
   });
 const dummyLeaves = [
-  { start: new Date("2025-08-10"), end: new Date("2025-08-12"), status: "approved" },
-  { start: new Date("2025-08-15"), end: new Date("2025-08-16"), status: "pending" },
+  { start: new Date("2025-08-10"), end: new Date("2025-08-12"), status: "approved" as const },
+  { start: new Date("2025-08-15"), end: new Date("2025-08-16"), status: "pending" as const },
 ];
-
 // Calendar se selected range form me dalna
 const formatDate = (date: Date) => {
   const yyyy = date.getFullYear();
@@ -48,12 +47,12 @@ const handleRangeSelect = (range: { from?: Date; to?: Date } | undefined) => {
       endDate: formatDate(end),
     }));
   } else if (range.from) {
-    setFormData((prev) => ({
-      ...prev,
-      startDate: formatDate(range.from),
-      endDate: "",
-    }));
-  } else {
+  setFormData((prev) => ({
+    ...prev,
+    startDate: formatDate(range.from!), // Bas '!' laga do yahan
+    endDate: "",
+  }));
+} else {
     setFormData((prev) => ({
       ...prev,
       startDate: "",
@@ -63,7 +62,7 @@ const handleRangeSelect = (range: { from?: Date; to?: Date } | undefined) => {
 };
 
 
-<div className="border-2 border-red-500 rounded-lg p-2" style={{ minWidth: 350 }}>
+<div style={{ height: '400px', overflow: 'hidden' }}>
   <AdvancedCalendar leaves={dummyLeaves} onRangeSelect={handleRangeSelect} />
 </div>
 

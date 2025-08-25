@@ -5,3 +5,8 @@
 body {
   overflow: hidden; /* poore page ka scroll remove */
 }
+.rdp-months {
+  min-height: 300px !important;
+  display: flex;
+  justify-content: center;
+}
