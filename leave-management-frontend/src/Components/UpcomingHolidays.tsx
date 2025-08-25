@@ -2,10 +2,10 @@
 import React from "react";
 import { Link } from "react-router-dom";
 
-type Holiday = {
-  dateISO: string;       // e.g., "2023-08-15"
-  name: string;          // e.g., "Independence Day"
-  weekday: string;       // e.g., "Tuesday"
+export type Holiday = {
+  dateISO: string; // e.g., "2023-08-15"
+  name: string;    // e.g., "Independence Day"
+  weekday: string; // e.g., "Tuesday"
 };
 
 // Dummy data (you can later fetch this from an API)
@@ -23,14 +23,20 @@ function monthDayPill(dateISO: string) {
   return { month, day };
 }
 
-const UpcomingHolidays: React.FC<{ className?: string }> = ({ className }) => {
-  const items = HOLIDAYS
-    .slice() // copy
+interface UpcomingHolidaysProps {
+  items?: Holiday[]; // ✅ allow passing holidays from outside
+  className?: string;
+}
+
+const UpcomingHolidays: React.FC<UpcomingHolidaysProps> = ({ items, className }) => {
+  const source = items ?? HOLIDAYS; // ✅ use provided items OR fallback to default list
+  const top3 = source
+    .slice()
     .sort((a, b) => +new Date(a.dateISO) - +new Date(b.dateISO))
-    .slice(0, 3); // show only first 3 in dashboard card
+    .slice(0, 3);
 
   return (
-    <div className="bg-white rounded-xl shadow-sm p-5">
+    <div className={`bg-white rounded-xl shadow-sm p-5 ${className || ""}`}>
       <div className="flex items-center justify-between mb-4">
         <h3 className="text-lg font-semibold text-gray-900">Upcoming Holidays</h3>
         <Link
@@ -42,7 +48,7 @@ const UpcomingHolidays: React.FC<{ className?: string }> = ({ className }) => {
       </div>
 
       <ul className="space-y-4">
-        {items.map((h) => {
+        {top3.map((h) => {
           const { month, day } = monthDayPill(h.dateISO);
           return (
             <li key={h.dateISO} className="flex items-start gap-4">

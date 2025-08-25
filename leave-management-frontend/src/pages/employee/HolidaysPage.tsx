@@ -1,6 +1,6 @@
 // src/pages/HolidaysPage.tsx
 import React from "react";
-import Layout from "../components/Layout";
+import Layout from "../../components/Layout";
 
 type Holiday = {
   dateISO: string;
@@ -45,7 +45,9 @@ const HolidaysPage: React.FC = () => {
                     <span className="text-[10px] font-semibold text-sky-700 bg-sky-50 px-2 py-1 rounded-md">
                       {month}
                     </span>
-                    <span className="text-lg font-bold text-sky-700">{day}</span>
+                    <span className="text-lg font-bold text-sky-700">
+                      {day}
+                    </span>
                   </div>
 
                   {/* name + weekday */}
