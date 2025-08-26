@@ -84,27 +84,21 @@ const SimpleCalendar: React.FC<CalendarProps> = ({ events }) => {
   };
 
   return (
-    <div className="bg-white rounded-2xl shadow p-4 flex flex-col w-full">
+    <div className="bg-white rounded-2xl shadow p-4 flex flex-col max-w-sm">
       {/* Header */}
       <div className="flex items-center justify-between mb-4">
         <button
           onClick={() =>
-            setCurrent(
-              new Date(current.getFullYear(), current.getMonth() - 1, 1)
-            )
+            setCurrent(new Date(current.getFullYear(), current.getMonth() - 1, 1))
           }
           className="p-1.5 rounded-full hover:bg-gray-100 transition"
         >
           <ChevronLeft size={18} className="text-gray-600" />
         </button>
-        <div className="text-base font-semibold text-gray-800">
-          {monthLabel}
-        </div>
+        <div className="text-base font-semibold text-gray-800">{monthLabel}</div>
         <button
           onClick={() =>
-            setCurrent(
-              new Date(current.getFullYear(), current.getMonth() + 1, 1)
-            )
+            setCurrent(new Date(current.getFullYear(), current.getMonth() + 1, 1))
           }
           className="p-1.5 rounded-full hover:bg-gray-100 transition"
         >
@@ -166,24 +160,15 @@ const SimpleCalendar: React.FC<CalendarProps> = ({ events }) => {
       {/* Legend */}
       <div className="flex justify-center gap-5 mt-4 text-[11px] text-gray-600">
         <div className="flex items-center gap-1">
-          <span
-            className="h-2 w-2 rounded-full"
-            style={{ backgroundColor: "#10b981" }}
-          />
+          <span className="h-2 w-2 rounded-full" style={{ backgroundColor: "#10b981" }} />
           <span>Approved</span>
         </div>
         <div className="flex items-center gap-1">
-          <span
-            className="h-2 w-2 rounded-full"
-            style={{ backgroundColor: "#3b82f6" }}
-          />
+          <span className="h-2 w-2 rounded-full" style={{ backgroundColor: "#3b82f6" }} />
           <span>Pending</span>
         </div>
         <div className="flex items-center gap-1">
-          <span
-            className="h-2 w-2 rounded-full"
-            style={{ backgroundColor: "#9333ea" }}
-          />
+          <span className="h-2 w-2 rounded-full" style={{ backgroundColor: "#9333ea" }} />
           <span>Holiday</span>
         </div>
       </div>
