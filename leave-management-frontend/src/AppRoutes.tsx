@@ -39,6 +39,18 @@ const AppRoutes: React.FC = () => {
       days: days,
       reason: data.reason,
     };
+ 
+    {activeView === "boss-dashboard" && (
+  <BossView
+    activeView={activeView}
+    leaveRequests={leaveRequests}
+    setLeaveRequests={setLeaveRequests}
+  />
+)}
+
+
+
+
 
      setLeaveRequests(prev => [newRequest, ...prev]);
     // setNotification({
