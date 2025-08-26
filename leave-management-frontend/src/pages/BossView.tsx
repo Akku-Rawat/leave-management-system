@@ -1,120 +1,123 @@
-import React, { useState } from "react";
-
-interface LeaveRequest {
-  id: string;
-  employeeName: string;
-  type: string;
-  status: string;
-  startDate: string;
-  endDate: string;
-  days: number;
-  reason: string;
-}
+import React from "react";
+import {
+  FaCheckCircle,
+  FaTimesCircle,
+  FaUserTie,
+  FaClock,
+  FaThumbsUp,
+  FaThumbsDown,
+} from "react-icons/fa";
+import type { LeaveRequestType } from "../Types";
 
 interface BossViewProps {
   activeView: string;
-  leaveRequests: LeaveRequest[];
-  setLeaveRequests: React.Dispatch<React.SetStateAction<LeaveRequest[]>>;
+  leaveRequests: LeaveRequestType[];
+  setLeaveRequests: React.Dispatch<React.SetStateAction<LeaveRequestType[]>>;
 }
 
 const BossView: React.FC<BossViewProps> = ({
-  activeView,
   leaveRequests,
   setLeaveRequests,
 }) => {
-  const [filter, setFilter] = useState("");
+  // Hardcoded demo request
+  const hardcodedRequest: LeaveRequestType = {
+    id: "999",
+    employeeName: "Demo Employee",
+    type: "Annual Leave",
+    status: "Pending",
+    startDate: "2025-09-01",
+    endDate: "2025-09-03",
+    days: 3,
+    reason: "Demo vacation leave",
+    date: new Date().toISOString().split("T")[0],
+  };
 
-  // Approve Handler
-  const handleApprove = (id: string) => {
+  const requests = [hardcodedRequest, ...leaveRequests];
+
+  const handleAction = (id: string, action: "Approved" | "Rejected") => {
     setLeaveRequests((prev) =>
-      prev.map((lr) => (lr.id === id ? { ...lr, status: "Approved" } : lr))
+      prev.map((req) =>
+        req.id === id ? { ...req, status: action } : req
+      )
     );
   };
 
-  // Reject Handler
-  const handleReject = (id: string) => {
-    setLeaveRequests((prev) =>
-      prev.map((lr) => (lr.id === id ? { ...lr, status: "Rejected" } : lr))
-    );
-  };
+  // Stats
+  const total = requests.length;
+  const approved = requests.filter((r) => r.status === "Approved").length;
+  const rejected = requests.filter((r) => r.status === "Rejected").length;
+  const pending = requests.filter((r) => r.status === "Pending").length;
 
   return (
-    <div className="p-6">
-      <h2 className="text-3xl font-bold mb-6">Leave Approvals Overview</h2>
-      <div className="grid grid-cols-3 gap-4 mb-6">
-        <div className="bg-blue-100 p-4 rounded-lg">
-          <h3 className="font-semibold">Monthly Leave Growth</h3>
-          <p className="text-2xl font-bold text-blue-600">+12%</p>
+    <div className="p-6 space-y-8">
+      <h2 className="text-2xl font-bold mb-4">Boss Dashboard</h2>
+
+      {/* Stats Cards */}
+      <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
+        <div className="bg-white p-4 rounded-xl shadow flex items-center gap-3">
+          <FaUserTie className="text-blue-500 text-2xl" />
+          <div>
+            <p className="text-gray-600 text-sm">Total Requests</p>
+            <p className="text-xl font-bold">{total}</p>
+          </div>
         </div>
-        <div className="bg-green-100 p-4 rounded-lg">
-          <h3 className="font-semibold">Most Common Leave</h3>
-          <p className="text-lg font-medium">Sick Leave</p>
+        <div className="bg-white p-4 rounded-xl shadow flex items-center gap-3">
+          <FaClock className="text-yellow-500 text-2xl" />
+          <div>
+            <p className="text-gray-600 text-sm">Pending</p>
+            <p className="text-xl font-bold">{pending}</p>
+          </div>
         </div>
-        <div className="bg-yellow-100 p-4 rounded-lg">
-          <h3 className="font-semibold">Pending Requests</h3>
-          <p className="text-2xl font-bold text-yellow-600">
-            {leaveRequests.filter((l) => l.status === "Pending").length}
-          </p>
+        <div className="bg-white p-4 rounded-xl shadow flex items-center gap-3">
+          <FaThumbsUp className="text-green-500 text-2xl" />
+          <div>
+            <p className="text-gray-600 text-sm">Approved</p>
+            <p className="text-xl font-bold">{approved}</p>
+          </div>
+        </div>
+        <div className="bg-white p-4 rounded-xl shadow flex items-center gap-3">
+          <FaThumbsDown className="text-red-500 text-2xl" />
+          <div>
+            <p className="text-gray-600 text-sm">Rejected</p>
+            <p className="text-xl font-bold">{rejected}</p>
+          </div>
         </div>
       </div>
 
-      <table className="w-full text-left border-collapse border border-gray-300">
-        <thead>
-          <tr>
-            <th className="px-4 py-2 border">Employee</th>
-            <th className="px-4 py-2 border">Type</th>
-            <th className="px-4 py-2 border">Dates</th>
-            <th className="px-4 py-2 border">Days</th>
-            <th className="px-4 py-2 border">Status</th>
-            <th className="px-4 py-2 border">Actions</th>
-          </tr>
-        </thead>
-        <tbody>
-          {leaveRequests.map((req, i) => (
-            <tr key={req.id} className={i % 2 === 0 ? "bg-gray-50" : ""}>
-              <td className="px-4 py-2 border">{req.employeeName}</td>
-              <td className="px-4 py-2 border">{req.type}</td>
-              <td className="px-4 py-2 border">
-                {req.startDate} → {req.endDate}
-              </td>
-              <td className="px-4 py-2 border">{req.days}</td>
-              <td className="px-4 py-2 border">
-                <span
-                  className={`px-2 py-1 rounded text-sm ${
-                    req.status === "Approved"
-                      ? "bg-green-100 text-green-800"
-                      : req.status === "Pending"
-                      ? "bg-yellow-100 text-yellow-800"
-                      : "bg-red-100 text-red-800"
-                  }`}
+      {/* Pending Requests List */}
+      <div className="space-y-4">
+        <h3 className="text-lg font-semibold">Pending Requests</h3>
+        {requests
+          .filter((req) => req.status === "Pending")
+          .map((req) => (
+            <div
+              key={req.id}
+              className="bg-white p-4 rounded-xl shadow flex flex-col md:flex-row md:items-center md:justify-between"
+            >
+              <div>
+                <p className="font-semibold">{req.employeeName}</p>
+                <p className="text-sm text-gray-600">
+                  {req.type} ({req.startDate} → {req.endDate})
+                </p>
+                <p className="text-sm text-gray-500">{req.reason}</p>
+              </div>
+              <div className="flex gap-3 mt-3 md:mt-0">
+                <button
+                  onClick={() => handleAction(req.id, "Approved")}
+                  className="flex items-center gap-2 bg-green-500 text-white px-4 py-2 rounded-lg hover:bg-green-600"
                 >
-                  {req.status}
-                </span>
-              </td>
-              <td className="px-4 py-2 border">
-                {req.status === "Pending" ? (
-                  <>
-                    <button
-                      onClick={() => handleApprove(req.id)}
-                      className="bg-green-500 text-white px-3 py-1 rounded mr-2"
-                    >
-                      Approve
-                    </button>
-                    <button
-                      onClick={() => handleReject(req.id)}
-                      className="bg-red-500 text-white px-3 py-1 rounded"
-                    >
-                      Reject
-                    </button>
-                  </>
-                ) : (
-                  "-"
-                )}
-              </td>
-            </tr>
+                  <FaCheckCircle /> Approve
+                </button>
+                <button
+                  onClick={() => handleAction(req.id, "Rejected")}
+                  className="flex items-center gap-2 bg-red-500 text-white px-4 py-2 rounded-lg hover:bg-red-600"
+                >
+                  <FaTimesCircle /> Reject
+                </button>
+              </div>
+            </div>
           ))}
-        </tbody>
-      </table>
+      </div>
     </div>
   );
 };

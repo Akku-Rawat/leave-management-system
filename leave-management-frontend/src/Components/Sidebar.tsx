@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { FaPlusCircle, FaHistory, FaChartLine, FaSignOutAlt } from "react-icons/fa";
+import { FaPlusCircle, FaHistory, FaChartLine, FaSignOutAlt, FaTachometerAlt } from "react-icons/fa";
 
 interface SidebarProps {
   activeView: string;
@@ -45,6 +45,22 @@ const Sidebar: React.FC<SidebarProps> = ({ activeView, onChangeView, userRole })
       {/* Menu */}
       <nav className="mt-6 flex-1 overflow-y-auto">
         <div className="px-2 space-y-2">
+          {/* HR → Dashboard */}
+          {userRole === "hr" && (
+            <button
+              onClick={() => onChangeView("dashboard")}
+              className={`flex items-center w-full px-3 py-2 rounded ${
+                activeView === "dashboard"
+                  ? "bg-blue-100 border-l-4 border-blue-500 text-blue-700"
+                  : "text-gray-700 hover:bg-blue-50"
+              }`}
+            >
+              <FaTachometerAlt className="mr-3 text-lg" />
+              {isOpen && "Dashboard"}
+            </button>
+          )}
+
+          {/* Apply Leave (Employee + HR only) */}
           {(userRole === "employee" || userRole === "hr") && (
             <button
               onClick={() => onChangeView("apply")}
@@ -59,6 +75,22 @@ const Sidebar: React.FC<SidebarProps> = ({ activeView, onChangeView, userRole })
             </button>
           )}
 
+          {/* History → Employee = MyHistory, HR = HRView */}
+          {(userRole === "employee" || userRole === "hr") && (
+            <button
+              onClick={() => onChangeView("history")}
+              className={`flex items-center w-full px-3 py-2 rounded ${
+                activeView === "history"
+                  ? "bg-blue-100 border-l-4 border-blue-500 text-blue-700"
+                  : "text-gray-700 hover:bg-blue-50"
+              }`}
+            >
+              <FaHistory className="mr-3 text-lg" />
+              {isOpen && "History"}
+            </button>
+          )}
+
+          {/* Boss Dashboard */}
           {userRole === "boss" && (
             <button
               onClick={() => onChangeView("boss-dashboard")}
@@ -73,21 +105,19 @@ const Sidebar: React.FC<SidebarProps> = ({ activeView, onChangeView, userRole })
             </button>
           )}
 
-          {/* boss-employees button removed as per your request */}
-
-          {userRole !== "boss" && (
-            <button
-              onClick={() => onChangeView("history")}
-              className={`flex items-center w-full px-3 py-2 rounded ${
-                activeView === "history"
-                  ? "bg-blue-100 border-l-4 border-blue-500 text-blue-700"
-                  : "text-gray-700 hover:bg-blue-50"
-              }`}
-            >
-              <FaHistory className="mr-3 text-lg" />
-              {isOpen && "My History"}
-            </button>
-          )}
+          {/* History (Employee/HR => My History, Boss => All Employees History) */}
+          <button
+            onClick={() => onChangeView("history")}
+            className={`flex items-center w-full px-3 py-2 rounded ${
+              activeView === "history"
+                ? "bg-blue-100 border-l-4 border-blue-500 text-blue-700"
+                : "text-gray-700 hover:bg-blue-50"
+            }`}
+          >
+            <FaHistory className="mr-3 text-lg" />
+            {isOpen &&
+              (userRole === "boss" ? "All Employees History" : "My History")}
+          </button>
         </div>
       </nav>
 

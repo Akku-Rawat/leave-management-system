@@ -64,7 +64,7 @@ const App: React.FC = () => {
   const handleLogin = (user: User) => {
     setCurrentUser(user);
     if (user.role === "boss") {
-      setActiveView("boss-dashboard"); // changed from dashboard
+      setActiveView("boss-dashboard"); // Boss landing
     } else if (user.role === "hr") {
       setActiveView("dashboard");
     } else {
@@ -115,7 +115,9 @@ const App: React.FC = () => {
 
   const goBack = () => {
     setSubmitSuccess(false);
-    if (currentUser?.role === "boss" || currentUser?.role === "hr") {
+    if (currentUser?.role === "boss") {
+      setActiveView("boss-dashboard");
+    } else if (currentUser?.role === "hr") {
       setActiveView("dashboard");
     } else {
       setActiveView("apply");
@@ -138,7 +140,7 @@ const App: React.FC = () => {
         />
 
         <main className="flex-1 overflow-auto">
-          {(activeView === "apply" || activeView === "dashboard") && (
+          {(activeView === "apply" || activeView === "dashboard" || activeView === "boss-dashboard") && (
             <>
               {submitSuccess ? (
                 <NotificationScreen
@@ -148,6 +150,7 @@ const App: React.FC = () => {
                 />
               ) : (
                 <>
+                  {/* Employee Apply */}
                   {currentUser.role === "employee" && activeView === "apply" && (
                     <LeaveRequest
                       onSubmit={addLeaveRequest}
@@ -158,10 +161,12 @@ const App: React.FC = () => {
                     />
                   )}
 
+                  {/* HR View */}
                   {currentUser.role === "hr" && activeView === "dashboard" && (
                     <HRView />
                   )}
 
+                  {/* HR can also Apply */}
                   {currentUser.role === "hr" && activeView === "apply" && (
                     <LeaveRequest
                       onSubmit={addLeaveRequest}
@@ -172,7 +177,7 @@ const App: React.FC = () => {
                     />
                   )}
 
-                  {/* Boss View with only boss-dashboard */}
+                  {/* Boss View */}
                   {currentUser.role === "boss" && activeView === "boss-dashboard" && (
                     <BossView
                       activeView={activeView}
@@ -181,15 +186,16 @@ const App: React.FC = () => {
                     />
                   )}
                 </>
-                
               )}
             </>
           )}
 
+          {/* History (Employee/HR = My History, Boss = All Employees History) */}
           {activeView === "history" && (
             <History
-              leaveRequests={leaveRequests}
+              leaveRequests={[...sampleRequests, ...leaveRequests]}
               setActiveView={setActiveView}
+              userRole={currentUser.role}
             />
           )}
 
