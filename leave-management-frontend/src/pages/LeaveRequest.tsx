@@ -3,7 +3,7 @@ import type { LeaveRequestProps } from "../Types";
 import EmployeeView from "./EmployeView";
 
 const LeaveRequest: React.FC<LeaveRequestProps> = (props) => {
-  // Ye hamesha EmployeeView hi return karega
+  // This component always returns EmployeeView with all props passed through
   return <EmployeeView {...props} />;
 };
 

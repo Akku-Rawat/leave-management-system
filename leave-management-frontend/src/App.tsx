@@ -7,14 +7,7 @@ import History from "./pages/History";
 import LoginPage from "./pages/loginpage";
 import HRView from "./pages/HRView";
 import BossView from "./pages/BossView";
-import type { LeaveRequestType, LeaveRequestFormData } from "./Types";
-
-interface User {
-  role: "employee" | "hr" | "boss";
-  name: string;
-  id: string;
-  department: string;
-}
+import type { LeaveRequestType, LeaveRequestFormData, User } from "./Types";
 
 const App: React.FC = () => {
   const [activeView, setActiveView] = useState("apply");
@@ -25,46 +18,15 @@ const App: React.FC = () => {
     type: "success" | "error" | "warning";
   } | null>(null);
   const [submitSuccess, setSubmitSuccess] = useState(false);
-
   const [currentUser, setCurrentUser] = useState<User | null>(null);
 
-  const sampleRequests = [
-    {
-      id: "1",
-      employeeName: "Jane Smith",
-      type: "Annual Leave",
-      status: "Pending",
-      startDate: "2025-08-30",
-      endDate: "2025-09-02",
-      days: 4,
-      reason: "Family vacation to Goa",
-    },
-    {
-      id: "2",
-      employeeName: "Bob Wilson",
-      type: "Sick Leave",
-      status: "Pending",
-      startDate: "2025-08-26",
-      endDate: "2025-08-27",
-      days: 2,
-      reason: "Medical appointment and recovery",
-    },
-    {
-      id: "3",
-      employeeName: "Alice Johnson",
-      type: "Emergency Leave",
-      status: "Approved",
-      startDate: "2025-08-20",
-      endDate: "2025-08-22",
-      days: 3,
-      reason: "Family emergency",
-    },
-  ];
-
   const handleLogin = (user: User) => {
+    console.log("Login successful:", user);
     setCurrentUser(user);
+
+    // Set appropriate landing view based on role
     if (user.role === "boss") {
-      setActiveView("boss-dashboard"); // Boss landing
+      setActiveView("boss-dashboard");
     } else if (user.role === "hr") {
       setActiveView("dashboard");
     } else {
@@ -76,20 +38,30 @@ const App: React.FC = () => {
     setCurrentUser(null);
     setActiveView("apply");
     setSubmitSuccess(false);
+    setLeaveRequests([]);
   };
 
   const handleChangeView = (view: string) => {
+    console.log("Changing view to:", view);
     setActiveView(view);
+    setSubmitSuccess(false);
   };
 
   const addLeaveRequest = (data: LeaveRequestFormData) => {
+    console.log("Adding leave request:", data);
+
     const start = new Date(data.startDate);
     const end = new Date(data.endDate);
-    let days = (end.getTime() - start.getTime()) / (1000 * 3600 * 24) + 1;
-    if (data.duration === "half") days = 0.5;
+    let days = Math.ceil((end.getTime() - start.getTime()) / (1000 * 3600 * 24)) + 1;
+
+    if (data.duration === "half" || data.duration === "first-half" || data.duration === "second-half") {
+      days = 0.5;
+    }
 
     const newRequest: LeaveRequestType = {
       id: (leaveRequests.length + 1).toString(),
+      employeeName: currentUser?.name || "Unknown",
+      department: currentUser?.department || "Unknown",
       date: new Date().toISOString().split("T")[0],
       status: "Pending",
       type: data.type,
@@ -124,95 +96,132 @@ const App: React.FC = () => {
     }
   };
 
+  // Show login page if no user
   if (!currentUser) {
     return <LoginPage onLogin={handleLogin} />;
   }
 
-  return (
-    <div className="flex flex-col h-screen bg-gray-50">
-      <Header currentUser={currentUser} onLogout={handleLogout} />
+  console.log("Current user:", currentUser);
+  console.log("Active view:", activeView);
+  console.log("Submit success:", submitSuccess);
 
-      <div className="flex flex-1 overflow-hidden">
-        <Sidebar
-          activeView={activeView}
-          onChangeView={handleChangeView}
+  return (
+    <div className="min-h-screen bg-gray-50">
+      {/* Header */}
+      <Header 
+        userRole={currentUser.role} 
+        userName={currentUser.name}
+        onLogout={handleLogout}
+      />
+
+      <div className="flex">
+        {/* Sidebar */}
+        <Sidebar 
+          activeView={activeView} 
+          onChangeView={handleChangeView} 
           userRole={currentUser.role}
+          onLogout={handleLogout}
         />
 
-        <main className="flex-1 overflow-auto">
-          {(activeView === "apply" || activeView === "dashboard" || activeView === "boss-dashboard") && (
+        {/* Main Content */}
+        <div className="flex-1 p-6">
+          {submitSuccess ? (
+            <NotificationScreen 
+              onGoToHistory={goToHistory}
+              onGoBack={goBack}
+            />
+          ) : (
             <>
-              {submitSuccess ? (
-                <NotificationScreen
-                  onBack={goBack}
-                  onGoToHistory={goToHistory}
-                  lastRequest={leaveRequests[0]}
+              {/* Employee Apply View */}
+              {currentUser.role === "employee" && activeView === "apply" && (
+                <LeaveRequest 
+                  onSubmit={addLeaveRequest}
+                  userName={currentUser.name}
+                  userRole={currentUser.role}
+                  allRequests={leaveRequests}
                 />
-              ) : (
-                <>
-                  {/* Employee Apply */}
-                  {currentUser.role === "employee" && activeView === "apply" && (
-                    <LeaveRequest
-                      onSubmit={addLeaveRequest}
-                      setActiveView={setActiveView}
-                      userRole={currentUser.role}
-                      userName={currentUser.name}
-                      allRequests={[...sampleRequests, ...leaveRequests]}
-                    />
-                  )}
+              )}
 
-                  {/* HR View */}
-                  {currentUser.role === "hr" && activeView === "dashboard" && (
-                    <HRView />
-                  )}
+              {/* HR Dashboard */}
+              {currentUser.role === "hr" && activeView === "dashboard" && (
+                <HRView />
+              )}
 
-                  {/* HR can also Apply */}
-                  {currentUser.role === "hr" && activeView === "apply" && (
-                    <LeaveRequest
-                      onSubmit={addLeaveRequest}
-                      setActiveView={setActiveView}
-                      userRole={currentUser.role}
-                      userName={currentUser.name}
-                      allRequests={[...sampleRequests, ...leaveRequests]}
-                    />
-                  )}
+              {/* HR Apply Leave */}
+              {currentUser.role === "hr" && activeView === "apply" && (
+                <LeaveRequest 
+                  onSubmit={addLeaveRequest}
+                  userName={currentUser.name}
+                  userRole={currentUser.role}
+                  allRequests={leaveRequests}
+                />
+              )}
 
-                  {/* Boss View */}
-                  {currentUser.role === "boss" && activeView === "boss-dashboard" && (
-                    <BossView
-                      activeView={activeView}
-                      leaveRequests={[...sampleRequests, ...leaveRequests]}
-                      setLeaveRequests={setLeaveRequests}
-                    />
-                  )}
-                </>
+              {/* Boss Dashboard */}
+              {currentUser.role === "boss" && activeView === "boss-dashboard" && (
+                <BossView />
+              )}
+
+              {/* Boss Apply Leave */}
+              {currentUser.role === "boss" && activeView === "apply" && (
+                <LeaveRequest 
+                  onSubmit={addLeaveRequest}
+                  userName={currentUser.name}
+                  userRole={currentUser.role}
+                  allRequests={leaveRequests}
+                />
+              )}
+
+              {/* History for all roles */}
+              {activeView === "history" && (
+                <History 
+                  userRole={currentUser.role}
+                  allRequests={leaveRequests}
+                  currentUserId={currentUser.id}
+                />
+              )}
+
+              {/* Fallback for any other views */}
+              {!["apply", "dashboard", "boss-dashboard", "history"].includes(activeView) && (
+                <div className="text-center py-12">
+                  <h2 className="text-xl font-semibold text-gray-800">View not found</h2>
+                  <p className="text-gray-600 mt-2">The requested view "{activeView}" is not available.</p>
+                  <button 
+                    onClick={goBack}
+                    className="mt-4 px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700"
+                  >
+                    Go Back to Dashboard
+                  </button>
+                </div>
               )}
             </>
           )}
-
-          {/* History (Employee/HR = My History, Boss = All Employees History) */}
-          {activeView === "history" && (
-            <History
-              leaveRequests={[...sampleRequests, ...leaveRequests]}
-              setActiveView={setActiveView}
-              userRole={currentUser.role}
-            />
-          )}
-
-          {activeView === "project-example1" && (
-            <div className="p-6">
-              <h2 className="text-2xl font-bold">Project Example 1</h2>
-              <p className="text-gray-600 mt-2">Demo content for Example 1</p>
-            </div>
-          )}
-          {activeView === "project-example2" && (
-            <div className="p-6">
-              <h2 className="text-2xl font-bold">Project Example 2</h2>
-              <p className="text-gray-600 mt-2">Demo content for Example 2</p>
-            </div>
-          )}
-        </main>
+        </div>
       </div>
+
+      {/* Notification Toast */}
+      {notification && (
+        <div className="fixed top-4 right-4 z-50">
+          <div className={`p-4 rounded-lg shadow-lg max-w-sm ${
+            notification.type === 'success' ? 'bg-green-100 text-green-800 border border-green-200' :
+            notification.type === 'error' ? 'bg-red-100 text-red-800 border border-red-200' :
+            'bg-yellow-100 text-yellow-800 border border-yellow-200'
+          }`}>
+            <div className="flex justify-between items-start">
+              <div>
+                <div className="font-semibold">{notification.title}</div>
+                <div className="text-sm mt-1">{notification.message}</div>
+              </div>
+              <button 
+                onClick={() => setNotification(null)}
+                className="ml-4 text-lg font-semibold hover:opacity-75"
+              >
+                ×
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

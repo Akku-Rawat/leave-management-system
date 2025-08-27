@@ -1,5 +1,6 @@
 // controllers/adminController.js
-const prisma = require('../config/db');
+const db = require('../config/db');
+;
 
 exports.summaryReport = async (_req, res) => {
   const [pending, approved, rejected, users] = await Promise.all([

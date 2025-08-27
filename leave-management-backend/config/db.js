@@ -1,7 +1,8 @@
-const { Sequelize } = require('sequelize');
-const sequelize = new Sequelize('leave_management', 'root', 'shivangi@23', {
-  host: 'localhost',
-  dialect: 'mysql',
+const mysql = require('mysql2');
+const pool = mysql.createPool({
+  host: 'localhost',
+  user: 'root',
+  password: 'Root',
+  database: 'leave_portal'
 });
-
-module.exports = sequelize;
+module.exports = pool.promise(); // promisify queries ke liye

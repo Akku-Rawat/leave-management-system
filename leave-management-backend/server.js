@@ -1,51 +1,27 @@
-const express = require("express");
-const mysql = require("mysql2");
-const bodyParser = require("body-parser");
-const cors = require("cors");
+const express = require('express');
+const cors = require('cors');
+const bodyParser = require('body-parser');
+
+const authRoutes = require('./src/routes/authRoutes');
+const userRoutes = require('./src/routes/userRoutes');
+
+
+// similarly leaveRoutes if ready
 
 const app = express();
+const port = process.env.PORT || 3000;
+
 app.use(cors());
 app.use(bodyParser.json());
 
-const db = mysql.createConnection({
-  host: "localhost",
-  user: "root",
-  password: "shivangi@23",
-  database: "leave_management",
+app.use('/api/auth', authRoutes);
+app.use('/api/users', userRoutes);
+// app.use('/api/leave-records', leaveRoutes);
+
+app.get('/', (req, res) => {
+  res.send('Leave Management System Backend Running');
 });
 
-db.connect((err) => {
-  if (err) throw err;
-  console.log("MySQL connected");
+app.listen(port, () => {
+  console.log(`Server started on port ${port}`);
 });
-
-app.post("/leave-request", (req, res) => {
-  const {
-    user_id,
-    type,
-    duration,
-    start_date,
-    end_date,
-    reason,
-    emergency_contact,
-    days,
-  } = req.body;
-
-  const sql =
-    "INSERT INTO leave_requests (user_id, type, duration, start_date, end_date, reason, emergency_contact, days, submitted_date, status) VALUES (?, ?, ?, ?, ?, ?, ?, ?, CURDATE(), 'Pending')";
-
-  db.query(
-    sql,
-    [user_id, type, duration, start_date, end_date, reason, emergency_contact, days],
-    (err, result) => {
-      if (err) {
-        console.error(err);
-        return res.status(500).json({ message: "Database error" });
-      }
-      res.status(201).json({ message: "Leave request submitted", id: result.insertId });
-    }
-  );
-});
-
-const PORT = 5000;
-app.listen(PORT, () => console.log(`Server running on port ${PORT}`));

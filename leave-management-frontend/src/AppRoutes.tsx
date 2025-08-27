@@ -1,27 +1,15 @@
 import React, { useState } from "react";
 
-import Header from "./components/Header";
-import Sidebar from "./components/Sidebar";
-import NotificationScreen from "./components/Notification";
 
 
 import LeaveRequest from "./pages/LeaveRequest";
 import History from "./pages/History";
-// import ApplyLeave from "./pages/ApplyLeave";
-import Calendar from "./pages/Calendar";
-import type { LeaveRequestType } from "./Types";
-import type { LeaveRequestFormData } from "./Types";
 
-
-
-
+import type { LeaveRequestType, LeaveRequestFormData } from "./Types";
 
 const AppRoutes: React.FC = () => {
   const [activeView, setActiveView] = useState("dashboard");
   const [leaveRequests, setLeaveRequests] = useState<LeaveRequestType[]>([]);
-  // const [notification, setNotification] = useState<{ title: string; message: string; type: "success" | "error" | "warning"; } | null>(null);
-
- 
 
   const addLeaveRequest = (data: LeaveRequestFormData) => {
     const start = new Date(data.startDate);
@@ -30,70 +18,42 @@ const AppRoutes: React.FC = () => {
     if (data.duration === "half") days = 0.5;
 
     const newRequest: LeaveRequestType = {
-      id: leaveRequests.length + 1,
+      id: (leaveRequests.length + 1).toString(),
+      employeeName: "Current User", // This should come from authentication
+      department: "Engineering", // This should come from user profile
       date: new Date().toISOString().split("T")[0],
       status: "Pending",
       type: data.type,
-      start: data.startDate,
-      end: data.endDate,
+      startDate: data.startDate,
+      endDate: data.endDate,
       days: days,
       reason: data.reason,
     };
- 
-    {activeView === "boss-dashboard" && (
-  <BossView
-    activeView={activeView}
-    leaveRequests={leaveRequests}
-    setLeaveRequests={setLeaveRequests}
-  />
-)}
 
-
-
-
-
-     setLeaveRequests(prev => [newRequest, ...prev]);
-    // setNotification({
-    //   title: "Success",
-    //   message: "Leave request submitted successfully!",
-    //   type: "success",
-    // });
-    // setActiveView("history");
+    setLeaveRequests(prev => [newRequest, ...prev]);
   };
 
-  // const handleDateRangeSelect = (start: string, end: string) => {
-  //   setLeaveFormStartDate(start);
-  //   setLeaveFormEndDate(end);
-  //   setActiveView("applyleave");
-  // };
-
-  // const closeNotification = () => setNotification(null);
-
   return (
-    <div className="min-h-screen flex flex-col">
-      <Header />
-      <div className="flex flex-1">
-        <Sidebar activeView={activeView} onChangeView={setActiveView} />
+    <div className="min-h-screen bg-gray-50">
+      {activeView === "apply" && (
+        <LeaveRequest onSubmit={addLeaveRequest} />
+      )}
 
-        <main className="flex-1 p-8 bg-gray-50 overflow-auto">
-          {/* {activeView === "dashboard" && <Dashboard setActiveView={setActiveView} />} */}
-          {activeView === "apply" && <LeaveRequest onSubmit={addLeaveRequest} setActiveView={setActiveView} />}
-          {activeView === "applyleave" && (
-            <LeaveRequest
-              onSubmit={addLeaveRequest}
-              setActiveView={setActiveView}
-              // initialStartDate={leaveFormStartDate}
-              // initialEndDate={leaveFormEndDate}
-            />
-          )}
-          {/* {activeView === "calendar" && (
-            <Calendar leaveRequests={leaveRequests} onDateRangeSelect={handleDateRangeSelect} />
-          )} */}
-          {activeView === "history" && <History leaveRequests={leaveRequests} />}
-        </main>
-      </div>
+      {activeView === "applyleave" && (
+        <div className="p-6">
+          <h1 className="text-2xl font-bold mb-4">Apply for Leave</h1>
+          <LeaveRequest onSubmit={addLeaveRequest} />
+        </div>
+      )}
 
-     
+      {activeView === "history" && (
+        <History 
+          userRole="employee" 
+          allRequests={leaveRequests}
+        />
+      )}
+
+      {/* Note: BossView import was referenced but not used in the original */}
     </div>
   );
 };
