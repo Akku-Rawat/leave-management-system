@@ -1,0 +1,74 @@
+datasource db {
+  provider = "mysql"
+  url      = env("DATABASE_URL")
+}
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+model Role {
+  role_id   Int      @id @default(autoincrement())
+  role_name RoleName @unique
+  users     User[]
+}
+
+enum RoleName {
+  employee
+  hr
+  boss
+}
+
+model User {
+  user_id       Int      @id @default(autoincrement())
+  name          String
+  email         String   @unique
+  password_hash String
+  role_id       Int
+  role          Role     @relation(fields: [role_id], references: [role_id])
+  created_at    DateTime @default(now())
+  leaveRequests LeaveRequest[]
+  leaveBalances LeaveBalance[]
+  leaveActions  LeaveAction[]
+}
+
+model LeaveRequest {
+  leave_id    Int      @id @default(autoincrement())
+  user_id     Int
+  user        User     @relation(fields: [user_id], references: [user_id])
+  start_date  DateTime
+  end_date    DateTime
+  reason      String?
+  status      Status   @default(pending)
+  hr_action   Status   @default(pending)
+  boss_action Status   @default(pending)
+  applied_at  DateTime @default(now())
+  actions     LeaveAction[]
+}
+
+enum Status {
+  pending
+  approved
+  rejected
+  partial
+}
+
+model LeaveBalance {
+  balance_id   Int      @id @default(autoincrement())
+  user_id      Int
+  user         User     @relation(fields: [user_id], references: [user_id])
+  total_leaves Int      @default(30)
+  used_leaves  Int      @default(0)
+  updated_at   DateTime @updatedAt
+}
+
+model LeaveAction {
+  action_id Int      @id @default(autoincrement())
+  leave_id  Int
+  action_by Int
+  leave     LeaveRequest @relation(fields: [leave_id], references: [leave_id])
+  user      User     @relation(fields: [action_by], references: [user_id])
+  action    Status
+  remarks   String?
+  action_at DateTime @default(now())
+}
