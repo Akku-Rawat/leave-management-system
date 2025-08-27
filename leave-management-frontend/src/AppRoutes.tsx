@@ -13,9 +13,6 @@ import type { LeaveRequestType } from "./Types";
 import type { LeaveRequestFormData } from "./Types";
 
 
-
-
-
 const AppRoutes: React.FC = () => {
   const [activeView, setActiveView] = useState("dashboard");
   const [leaveRequests, setLeaveRequests] = useState<LeaveRequestType[]>([]);

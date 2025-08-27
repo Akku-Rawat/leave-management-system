@@ -75,20 +75,7 @@ const Sidebar: React.FC<SidebarProps> = ({ activeView, onChangeView, userRole })
             </button>
           )}
 
-          {/* History → Employee = MyHistory, HR = HRView */}
-          {(userRole === "employee" || userRole === "hr") && (
-            <button
-              onClick={() => onChangeView("history")}
-              className={`flex items-center w-full px-3 py-2 rounded ${
-                activeView === "history"
-                  ? "bg-blue-100 border-l-4 border-blue-500 text-blue-700"
-                  : "text-gray-700 hover:bg-blue-50"
-              }`}
-            >
-              <FaHistory className="mr-3 text-lg" />
-              {isOpen && "History"}
-            </button>
-          )}
+        
 
           {/* Boss Dashboard */}
           {userRole === "boss" && (
