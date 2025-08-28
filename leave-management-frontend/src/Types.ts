@@ -1,4 +1,6 @@
 export interface LeaveRequestType {
+  userId: any;
+  employeeId: string;
   id: string;
   employeeName: string;
   department?: string;
@@ -26,6 +28,9 @@ export interface LeaveRequestProps {
   userRole?: 'employee' | 'hr' | 'boss';
   userName?: string;
   allRequests?: LeaveRequestType[];
+  initialStartDate?: string;
+  initialEndDate?: string;
+
 }
 
 export interface User {

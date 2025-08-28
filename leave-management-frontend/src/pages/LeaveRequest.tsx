@@ -3,7 +3,7 @@ import type { LeaveRequestProps } from "../Types";
 import EmployeeView from "./EmployeView";
 
 const LeaveRequest: React.FC<LeaveRequestProps> = (props) => {
-  // This component always returns EmployeeView with all props passed through
+  // Use EmployeeView for all roles - it handles role-based rendering
   return <EmployeeView {...props} />;
 };
 
