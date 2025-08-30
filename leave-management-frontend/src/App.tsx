@@ -9,6 +9,8 @@ import HRView from "./pages/HRView";
 import BossView from "./pages/BossView";
 import type { LeaveRequestType, LeaveRequestFormData, User } from "./Types";
 import Documentation from "./components/documentation";
+import EmployeeManagement from "./pages/EmployeeManagement";
+import Reports from "./pages/Reports";
 const App: React.FC = () => {
   const [activeView, setActiveView] = useState("apply");
   const [leaveRequests, setLeaveRequests] = useState<LeaveRequestType[]>([]);
@@ -21,42 +23,48 @@ const App: React.FC = () => {
   const [currentUser, setCurrentUser] = useState<User | null>(null);
 
   // Sample requests for HR/Boss testing
-  const sampleRequests = [
+  const sampleRequests: LeaveRequestType[] = [
     {
       id: "1",
       employeeName: "Jane Smith",
       department: "Engineering",
       type: "Annual Leave",
-      status: "Pending" as const,
+      status: "Pending",
       startDate: "2025-08-30",
       endDate: "2025-09-02",
       days: 4,
       reason: "Family vacation to Goa",
-      date: "2025-08-25"
+      date: "2025-08-25",
+      userId: "sample-user-1",
+      employeeId: "sample-emp-1"
     },
     {
       id: "2", 
       employeeName: "Bob Wilson",
       department: "Finance",
       type: "Sick Leave",
-      status: "Pending" as const,
+      status: "Pending",
       startDate: "2025-08-26",
       endDate: "2025-08-27",
       days: 2,
       reason: "Medical appointment and recovery",
-      date: "2025-08-24"
+      date: "2025-08-24",
+      userId: "sample-user-2",
+      employeeId: "sample-emp-2"
     },
     {
       id: "3",
       employeeName: "Alice Johnson", 
       department: "Marketing",
       type: "Emergency Leave",
-      status: "Approved" as const,
+      status: "Approved",
       startDate: "2025-08-20",
       endDate: "2025-08-22",
       days: 3,
       reason: "Family emergency",
-      date: "2025-08-19"
+      date: "2025-08-19",
+      userId: "sample-user-3",
+      employeeId: "sample-emp-3"
     },
   ];
 
@@ -203,19 +211,13 @@ const App: React.FC = () => {
             />
           )}
 
-          {/* Other Views */}
-          {activeView === "employees" && currentUser.role === 'boss' && (
-            <div className="p-6">
-              <h2 className="text-2xl font-bold mb-4">Employee Management</h2>
-              <p className="text-gray-600">Coming soon - Detailed employee management interface</p>
-            </div>
-          )}
+         {activeView === "employees" && currentUser?.role === "boss" && (
+  <EmployeeManagement />
+)}
+
 
           {activeView === "reports" && currentUser.role === 'boss' && (
-            <div className="p-6">
-              <h2 className="text-2xl font-bold mb-4">Reports & Analytics</h2>
-              <p className="text-gray-600">Coming soon - Comprehensive reporting dashboard</p>
-            </div>
+  <Reports />
           )}
           
 {activeView === "documentation" && (
