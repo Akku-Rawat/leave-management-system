@@ -1,64 +1,80 @@
-// src/components/Sidebar.tsx (add Documentation link)
 import React, { useState } from "react";
+import { FaPlusCircle, FaHistory, FaTachometerAlt, FaUsers, FaChartBar, FaBook, FaSignOutAlt, FaUserCircle } from "react-icons/fa";
 
 interface SidebarProps {
   activeView: string;
   onChangeView: (view: string) => void;
-  userRole: 'employee' | 'hr' | 'boss';
+  userRole: "employee" | "hr" | "boss";
+  currentUserName: string;
 }
 
-const Sidebar: React.FC<SidebarProps> = ({ activeView, onChangeView, userRole }) => {
+const Sidebar: React.FC<SidebarProps> = ({ activeView, onChangeView, userRole, currentUserName }) => {
   const [isOpen, setIsOpen] = useState(true);
 
   const getMenuItems = () => {
-    const items: { id: string; icon: string; label: string }[] = [];
-
-    if (userRole === 'employee') {
-      items.push({ id: "apply",    icon: "fas fa-plus-circle",    label: "Apply Leave" });
-      items.push({ id: "history",  icon: "fas fa-history",        label: "History"     });
+    const items = [];
+    if (userRole === "employee") {
+      items.push({ id: "apply", icon: <FaPlusCircle />, label: "Apply Leave" });
+      items.push({ id: "history", icon: <FaHistory />, label: "History" });
+    } else if (userRole === "hr") {
+      items.push({ id: "dashboard", icon: <FaTachometerAlt />, label: "HR Dashboard" });
+      items.push({ id: "apply", icon: <FaPlusCircle />, label: "Apply Leave" });
+      items.push({ id: "history", icon: <FaHistory />, label: "History" });
+    } else if (userRole === "boss") {
+      items.push({ id: "boss-dashboard", icon: <FaTachometerAlt />, label: "Boss Dashboard" });
+      items.push({ id: "employees", icon: <FaUsers />, label: "Employees" });
+      items.push({ id: "reports", icon: <FaChartBar />, label: "Reports" });
+      items.push({ id: "history", icon: <FaHistory />, label: "History" });
     }
-    else if (userRole === 'hr') {
-      items.push({ id: "dashboard", icon: "fas fa-tachometer-alt", label: "HR Dashboard" });
-      items.push({ id: "apply",     icon: "fas fa-plus-circle",     label: "Apply Leave"   });
-      items.push({ id: "history",   icon: "fas fa-history",         label: "History"       });
-    }
-    else if (userRole === 'boss') {
-      items.push({ id: "boss-dashboard", icon: "fas fa-tachometer-alt", label: "Boss Dashboard" });
-      items.push({ id: "employees",      icon: "fas fa-users",         label: "Employees"      });
-      items.push({ id: "reports",        icon: "fas fa-chart-bar",     label: "Reports"        });
-      items.push({ id: "history",        icon: "fas fa-history",       label: "History"        });
-    }
-
-    // Documentation link for all roles
-    items.push({ id: "documentation", icon: "fas fa-book", label: "Documentation" });
-
+    items.push({ id: "documentation", icon: <FaBook />, label: "Documentation" });
     return items;
   };
 
   const menuItems = getMenuItems();
 
   return (
-    <aside className={`${isOpen ? 'w-64' : 'w-16'} bg-white border-r h-screen transition-all`}>
-      <div className="flex items-center justify-between p-4 border-b">
-        {isOpen && <span className="font-bold">ROLAFACE</span>}
-        <button onClick={() => setIsOpen(!isOpen)}>
-          <i className={`fas ${isOpen ? 'fa-angle-left' : 'fa-angle-right'}`} />
-        </button>
-      </div>
-      <nav className="p-2 flex-1 overflow-y-auto">
-        {menuItems.map(item => (
-          <button
-            key={item.id}
-            onClick={() => onChangeView(item.id)}
-            className={`flex items-center w-full px-3 py-2 mb-1 rounded hover:bg-blue-50 ${
-              activeView === item.id ? 'bg-blue-100 font-semibold' : ''
-            }`}
-          >
-            <i className={`${item.icon} w-6`} />
-            {isOpen && <span className="ml-2">{item.label}</span>}
+    <aside className={`bg-white border-r h-screen flex flex-col transition-all duration-300 ${isOpen ? "w-64" : "w-16"}`}>
+      <div>
+        <div className="flex items-center justify-between p-4 border-b">
+          {isOpen && <span className="font-bold text-lg">ROLAFACE</span>}
+          <button aria-label="Toggle Sidebar" onClick={() => setIsOpen(!isOpen)} className="focus:outline-none">
+            {isOpen ? "←" : "→"}
           </button>
-        ))}
-      </nav>
+        </div>
+        <nav className="p-2 flex flex-col space-y-1 overflow-auto">
+          {menuItems.map(({ id, icon, label }) => (
+            <button
+              key={id}
+              onClick={() => onChangeView(id)}
+              className={`flex items-center w-full p-3 rounded-md gap-3 text-left ${activeView === id ? "bg-blue-100 font-semibold" : "hover:bg-blue-50"}`}
+              title={!isOpen ? label : undefined}
+            >
+              <div className="text-xl w-6 flex justify-center">{icon}</div>
+              {isOpen && <span>{label}</span>}
+            </button>
+          ))}
+        </nav>
+      </div>
+      {/* User & Logout Section */}
+      <div className={`mt-auto flex-shrink-0 p-4 border-t ${isOpen ? "" : "flex justify-center"}`}>
+        {isOpen ? (
+          <div className="flex items-center gap-3">
+            <FaUserCircle className="text-2xl text-gray-600" />
+            <span className="flex-1 truncate">{currentUserName}</span>
+            <button onClick={() => onChangeView("logout")} className="text-gray-600 hover:text-gray-800">
+              <FaSignOutAlt />
+            </button>
+          </div>
+        ) : (
+          <button
+            onClick={() => onChangeView("logout")}
+            className="text-xl text-gray-600 hover:text-gray-800"
+            title="Logout"
+          >
+            <FaSignOutAlt />
+          </button>
+        )}
+      </div>
     </aside>
   );
 };

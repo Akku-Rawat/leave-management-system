@@ -1,7 +1,6 @@
-import React, { useState, useMemo } from "react";
+import React, { useState, useMemo, useEffect } from "react";
 import type { LeaveRequestType } from "../Types";
 import { FaUserGroup } from "react-icons/fa6";
-
 import {
   FaCheckCircle,
   FaTimesCircle,
@@ -21,19 +20,17 @@ import {
 type UserRole = 'employee' | 'hr' | 'boss';
 
 interface HistoryProps {
-  leaveRequests: LeaveRequestType[];
   setActiveView?: (view: string) => void;
   currentUserId?: string;
   userRole?: UserRole;
 }
 
-// Enhanced History with unique user filtering and role-based visibility
 const History: React.FC<HistoryProps> = ({ 
-  leaveRequests, 
   setActiveView,
   currentUserId = 'currentUser',
   userRole = 'employee'
 }: HistoryProps) => {
+  const [leaveRequests, setLeaveRequests] = useState<LeaveRequestType[]>([]);
   const [selectedYear, setSelectedYear] = useState("2025");
   const [searchTerm, setSearchTerm] = useState("");
   const [statusFilter, setStatusFilter] = useState("All");
@@ -41,15 +38,46 @@ const History: React.FC<HistoryProps> = ({
   const [showNotification, setShowNotification] = useState<string | null>(null);
   const [viewMode, setViewMode] = useState<'personal' | 'all'>('personal');
 
+  // Fetch data from API
+  useEffect(() => {
+    async function fetchLeaveRequests() {
+      try {
+        let apiEndpoint = "";
+        
+        if (userRole === 'employee') {
+          apiEndpoint = `/api/leaves/history/user/${currentUserId}`;
+        } else if (userRole === 'hr') {
+          if (viewMode === 'personal') {
+            apiEndpoint = `/api/leaves/history/user/${currentUserId}`;
+          } else {
+            apiEndpoint = `/api/leaves/history/all`;
+          }
+        } else if (userRole === 'boss') {
+          apiEndpoint = `/api/leaves/history/all`;
+        }
+
+        const response = await fetch(apiEndpoint);
+        if (!response.ok) throw new Error("Failed to fetch leave requests");
+        const data = await response.json();
+        setLeaveRequests(data);
+      } catch (error) {
+        console.error("Error fetching leave requests:", error);
+      }
+    }
+    
+    fetchLeaveRequests();
+  }, [currentUserId, userRole, viewMode]);
+
   // Filter requests based on user role and view mode
   const userFilteredRequests = useMemo(() => {
     if (userRole === 'employee') {
-      return leaveRequests.filter(req => req.employeeId === currentUserId || !req.employeeId);
+      return leaveRequests.filter(req => req.employeeId === currentUserId || req.userId === currentUserId);
     } else if (userRole === 'hr') {
       if (viewMode === 'personal') {
-        return leaveRequests.filter(req => req.userId === currentUserId || !req.userId);
+        return leaveRequests.filter(req => req.userId === currentUserId || req.employeeId === currentUserId);
       } else {
-        return leaveRequests;
+        // For 'all' view, show all employees' data but exclude HR's own data
+        return leaveRequests.filter(req => req.userId !== currentUserId && req.employeeId !== currentUserId);
       }
     } else if (userRole === 'boss') {
       return leaveRequests;
@@ -116,7 +144,7 @@ const History: React.FC<HistoryProps> = ({
       return "Invalid Date";
     }
 
-    return `${startDate.toLocaleDateString("en-GB", { day: "2-digit", month: "short" })} â†’ ${endDate.toLocaleDateString("en-GB", { day: "2-digit", month: "short" })}`;
+    return `${startDate.toLocaleDateString("en-GB", { day: "2-digit", month: "short" })} → ${endDate.toLocaleDateString("en-GB", { day: "2-digit", month: "short" })}`;
   };
 
   const getRelativeTime = (dateStr: string) => {
@@ -137,9 +165,22 @@ const History: React.FC<HistoryProps> = ({
     setTimeout(() => setShowNotification(null), 2000);
   };
 
-  const handleWithdraw = (r: LeaveRequestType) => {
-    setShowNotification(`${r.type} withdrawn`);
-    setTimeout(() => setShowNotification(null), 2000);
+  const handleWithdraw = async (r: LeaveRequestType) => {
+    try {
+      const response = await fetch(`/api/leaves/requests/${r.id}/withdraw`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+      });
+      if (!response.ok) throw new Error("Failed to withdraw request");
+      
+      setShowNotification(`${r.type} withdrawn`);
+      setTimeout(() => setShowNotification(null), 2000);
+      
+      // Refresh data
+      window.location.reload();
+    } catch (error) {
+      alert("Failed to withdraw request: " );
+    }
   };
 
   const handleDuplicate = (r: LeaveRequestType) => {
@@ -167,8 +208,19 @@ const History: React.FC<HistoryProps> = ({
     setTimeout(() => setShowNotification(null), 2000);
   };
 
+  useEffect(() => {
+    const prevBodyOverflow = document.body.style.overflow;
+    const prevHtmlOverflow = document.documentElement.style.overflow;
+    document.body.style.overflow = "hidden";
+    document.documentElement.style.overflow = "hidden";
+    return () => {
+      document.body.style.overflow = prevBodyOverflow;
+      document.documentElement.style.overflow = prevHtmlOverflow;
+    };
+  }, []);
+
   return (
-    <div className="p-4 bg-gray-50 h-screen overflow-hidden">
+    <div className="bg-gray-50 h-full flex flex-col overflow-hidden">
       {/* Notification */}
       {showNotification && (
         <div className="fixed top-4 right-4 z-50 bg-blue-600 text-white px-4 py-2 rounded-lg shadow-lg text-sm">
@@ -176,17 +228,16 @@ const History: React.FC<HistoryProps> = ({
         </div>
       )}
 
-      <div className="h-full flex flex-col space-y-4">
-
+      <div className="w-[1200px] flex-1 flex flex-col overflow-hidden items-center">
         {/* Analytics Header - Employee sees only their personal data */}
         {(userRole === 'employee' || userRole === 'hr') && (
-          <div className="bg-white rounded-2xl shadow-xl border border-slate-200 flex-shrink-0">
+          <div className="bg-white rounded-2xl shadow-xl border border-slate-200 w-[1100px] mt-6 flex-shrink-0">
             <div className="bg-gradient-to-r from-blue-600 to-indigo-700 px-4 py-3 rounded-t-2xl">
               <div className="flex items-center justify-between">
                 <div>
                   <h1 className="text-lg font-bold text-white flex items-center space-x-2">
                     <FaChartBar className="w-4 h-4" />
-                    <span>Leave History & Analytics</span>
+                    <span>Leave History</span>
                   </h1>
                   <p className="text-blue-100 text-xs mt-1">
                     {viewMode === 'personal' ? 'Your personal leave history' : 'All employee leave history'}
@@ -194,7 +245,7 @@ const History: React.FC<HistoryProps> = ({
                 </div>
 
                 {/* HR View Mode Toggle */}
-                {userRole === 'hr'  && (
+                {userRole === 'hr' && (
                   <div className="flex items-center bg-white bg-opacity-20 rounded-lg p-1">
                     <button
                       onClick={() => setViewMode('personal')}
@@ -272,13 +323,15 @@ const History: React.FC<HistoryProps> = ({
                     />
                   </div>
 
-                  <button
-                    onClick={handleExportData}
-                    className="px-3 py-2 bg-emerald-600 text-white rounded-lg hover:bg-emerald-700 transition-colors text-sm flex items-center"
-                  >
-                    <FaFileExport className="w-3 h-3 mr-1" />
-                    Export
-                  </button>
+                  {(["hr", "boss"].includes(userRole)) && (
+                    <button
+                      onClick={handleExportData}
+                      className="px-3 py-2 bg-emerald-600 text-white rounded-lg hover:bg-emerald-700 transition-colors text-sm flex items-center"
+                    >
+                      <FaFileExport className="w-3 h-3 mr-1" />
+                      Export
+                    </button>
+                  )}
                 </div>
               </div>
 
@@ -292,42 +345,12 @@ const History: React.FC<HistoryProps> = ({
                 </span>
               </div>
             </div>
-
-            {/* Stats Cards - hide for boss */}
-            {userRole !== 'boss' && (
-              <div className="p-4 grid grid-cols-2 lg:grid-cols-6 gap-3 text-center bg-gradient-to-r from-gray-50 to-blue-50">
-                <div className="bg-white rounded-lg p-3 shadow-sm border border-gray-200">
-                  <div className="text-lg font-bold text-slate-800">{analytics.totalRequests}</div>
-                  <div className="text-xs text-slate-600">Total</div>
-                </div>
-                <div className="bg-white rounded-lg p-3 shadow-sm border border-gray-200">
-                  <div className="text-lg font-bold text-blue-600">{analytics.totalApprovedDays}</div>
-                  <div className="text-xs text-slate-600">Used Days</div>
-                </div>
-                <div className="bg-white rounded-lg p-3 shadow-sm border border-gray-200">
-                  <div className="text-lg font-bold text-emerald-600">{analytics.approvalRate}%</div>
-                  <div className="text-xs text-slate-600">Approval</div>
-                </div>
-                <div className="bg-white rounded-lg p-3 shadow-sm border border-gray-200">
-                  <div className="text-lg font-bold text-amber-600">{analytics.pending}</div>
-                  <div className="text-xs text-slate-600">Pending</div>
-                </div>
-                <div className="bg-white rounded-lg p-3 shadow-sm border border-gray-200">
-                  <div className="text-lg font-bold text-emerald-600">{analytics.approved}</div>
-                  <div className="text-xs text-slate-600">Approved</div>
-                </div>
-                <div className="bg-white rounded-lg p-3 shadow-sm border border-gray-200">
-                  <div className="text-lg font-bold text-slate-600">{32 - analytics.totalApprovedDays}</div>
-                  <div className="text-xs text-slate-600">Remaining</div>
-                </div>
-              </div>
-            )}
           </div>
         )}
 
-        {/* Employee Overview - only HR or Boss */}
+        {/* Employee Overview - only HR (all mode) or Boss */}
         {(userRole === 'hr' && viewMode === 'all') || userRole === 'boss' ? (
-          <div className="bg-white rounded-2xl shadow-xl border border-slate-200 mt-4">
+          <div className="bg-white rounded-2xl shadow-xl border border-slate-200 mt-4 w-[1100px]">
             <div className="px-4 py-3 border-b border-slate-100 bg-gradient-to-r from-indigo-50 to-indigo-100 rounded-t-2xl">
               <h2 className="font-semibold text-slate-800 flex items-center space-x-2">
                 <FaUserGroup className="w-4 h-4 text-indigo-600" />
@@ -351,7 +374,7 @@ const History: React.FC<HistoryProps> = ({
                 </thead>
                 <tbody>
                   {Object.entries(
-                    leaveRequests.reduce((acc, req) => {
+                    userFilteredRequests.reduce((acc, req) => {
                       const name = req.employeeName || "Unknown";
                       if (!acc[name]) {
                         acc[name] = { total: 0, Approved: 0, Pending: 0, Rejected: 0, days: 0 };
@@ -381,7 +404,7 @@ const History: React.FC<HistoryProps> = ({
 
         {/* Recent Leave Requests - hide for boss */}
         {userRole !== 'boss' && (
-          <div className="bg-white rounded-2xl shadow-xl border border-slate-200 flex-1 overflow-hidden">
+          <div className="bg-white rounded-2xl shadow-xl border border-slate-200 overflow-hidden w-[1100px] mt-4">
             <div className="px-4 py-3 border-b border-slate-100 flex items-center justify-between bg-gradient-to-r from-slate-50 to-slate-100">
               <div>
                 <h2 className="font-semibold text-slate-800 flex items-center space-x-2">
@@ -403,7 +426,7 @@ const History: React.FC<HistoryProps> = ({
             </div>
 
             {/* Request Cards */}
-            <div className="p-4 h-full overflow-auto">
+            <div className="p-4 h-[400px] overflow-auto">
               {filteredRequests.length === 0 ? (
                 <div className="h-full flex items-center justify-center text-center">
                   <div>
@@ -424,7 +447,7 @@ const History: React.FC<HistoryProps> = ({
                 </div>
               ) : (
                 <div className="space-y-3">
-                  {filteredRequests.map((req, index) => {
+                  {filteredRequests.map((req) => {
                     const config = getStatusConfig(req.status);
                     return (
                       <div

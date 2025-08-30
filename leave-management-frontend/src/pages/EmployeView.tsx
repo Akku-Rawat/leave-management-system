@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import AdvancedCalendar from "./Calendar";
 import { FaUsers, FaCalendarAlt, FaClock } from "react-icons/fa";
 import type { LeaveRequestProps } from "../Types";
@@ -13,7 +13,7 @@ const EncashmentModal: React.FC<{
   if (!visible) return null;
 
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-40 flex items-center justify-center z-50">
+   <div className="fixed inset-0 bg-black bg-opacity-40 flex items-center justify-center z-50">
       <div className="bg-white rounded p-6 max-w-md w-full shadow-lg">
         <h3 className="text-xl font-semibold mb-4">Encashment Request</h3>
         <p className="mb-4">
@@ -42,10 +42,7 @@ const EncashmentModal: React.FC<{
           </label>
         </div>
         <div className="flex justify-end space-x-4">
-          <button
-            onClick={onClose}
-            className="px-4 py-2 border rounded text-gray-700 hover:bg-gray-100"
-          >
+          <button onClick={onClose} className="px-4 py-2 border rounded text-gray-700 hover:bg-gray-100">
             Cancel
           </button>
           <button
@@ -76,17 +73,14 @@ const EmployeeView: React.FC<LeaveRequestProps> = ({ onSubmit, userName = "User"
     emergencyContact: "",
   });
   const [showEncashModal, setShowEncashModal] = useState(false);
-
-  const dummyLeaves = [
-    { start: new Date("2025-08-10"), end: new Date("2025-08-12"), status: "approved" as const },
-    { start: new Date("2025-08-15"), end: new Date("2025-08-16"), status: "pending" as const },
-  ];
-
-  const userData = {
-    totalLeaves: 32,
-    usedLeaves: 8,
-    pendingLeaves: 2,
-  };
+  const [leaves, setLeaves] = useState<
+    { start: Date; end: Date; status: string }[]
+  >([]);
+  const [userData, setUserData] = useState({
+    totalLeaves: 0,
+    usedLeaves: 0,
+    pendingLeaves: 0,
+  });
 
   const remainingLeaves = userData.totalLeaves - userData.usedLeaves - userData.pendingLeaves;
 
@@ -96,6 +90,32 @@ const EmployeeView: React.FC<LeaveRequestProps> = ({ onSubmit, userName = "User"
     const dd = String(date.getDate()).padStart(2, "0");
     return `${yyyy}-${mm}-${dd}`;
   };
+
+  useEffect(() => {
+    async function fetchData() {
+      try {
+        const leavesRes = await fetch("/api/leaves/my");
+        const leavesJson = await leavesRes.json();
+        const formattedLeaves = leavesJson.map((leave: any) => ({
+          start: new Date(leave.startDate),
+          end: new Date(leave.endDate),
+          status: leave.status,
+        }));
+        setLeaves(formattedLeaves);
+
+        const statsRes = await fetch("/api/users/me/stats");
+        const statsJson = await statsRes.json();
+        setUserData({
+          totalLeaves: statsJson.totalLeaves,
+          usedLeaves: statsJson.usedLeaves,
+          pendingLeaves: statsJson.pendingLeaves,
+        });
+      } catch (error) {
+        console.error("Error fetching data", error);
+      }
+    }
+    fetchData();
+  }, []);
 
   const handleRangeSelect = (range: { from?: Date; to?: Date } | undefined) => {
     if (!range) return;
@@ -115,47 +135,58 @@ const EmployeeView: React.FC<LeaveRequestProps> = ({ onSubmit, userName = "User"
     setFormData((prev) => ({ ...prev, [id]: value }));
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (onSubmit) onSubmit(formData);
+    try {
+      const response = await fetch("/api/leaves/create", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(formData),
+      });
+      if (!response.ok) throw new Error("Failed to submit leave request");
+      await response.json();
+      alert("Leave request submitted successfully.");
+      if (onSubmit) onSubmit(formData);
+      // Optionally reset form here
+    } catch (error) {
+      alert("Error submitting leave request: " );
+    }
   };
 
   return (
-    <div className="min-h-[90vh] bg-gradient-to-br from-white via-slate-50 to-blue-50 py-8 px-6">
+    <div className=" bg-gradient-to-br from-white via-slate-50 to-blue-50 h-[650px] py-8 px-6">
       <div className="max-w-6xl mx-auto">
         <div className="bg-white rounded-2xl shadow-md border border-gray-100 overflow-hidden">
           <div className="flex flex-col lg:flex-row">
             {/* LEFT SIDE - Stats + Calendar */}
-            <div className="lg:w-2/5 bg-gradient-to-br from-slate-100 to-blue-100 p-8 relative">
-              <div className="relative z-10 space-y-8">
+              <div className="lg:w-2/5 h-[650px] bg-gradient-to-br from-slate-100 to-blue-100 px-8 pt-2 pb-8 relative">
+              <div className="relative z-10 space-y-4">
                 <div>
                   <h2 className="text-xl font-bold mb-3 flex items-center text-gray-800">
                     <FaUsers className="mr-3 text-blue-500" /> Employee Dashboard
                   </h2>
-                  <p className="text-gray-600 text-sm">Welcome back, {userName}</p>
                 </div>
 
                 {/* Stats Cards */}
-                <div className="grid grid-cols-2 gap-4">
-                  <div className="bg-white rounded-xl p-4 shadow-sm text-center">
+                  <div className="grid grid-cols-2 gap-4">
+                  <div className="bg-white h-[70px] rounded-xl p-4 shadow-sm text-center">
                     <div className="text-2xl font-bold text-gray-800">{userData.totalLeaves}</div>
                     <div className="text-xs text-gray-500">Total Balance</div>
                   </div>
-                  <div className="bg-white rounded-xl p-4 shadow-sm text-center">
+                  <div className="bg-white h-[70px] rounded-xl p-4 shadow-sm text-center">
                     <div className="text-2xl font-bold text-gray-800">{userData.usedLeaves}</div>
                     <div className="text-xs text-gray-500">Used</div>
                   </div>
-                  <div className="bg-white rounded-xl p-4 shadow-sm text-center">
+                  <div className="bg-white h-[100px] rounded-xl p-4 shadow-sm text-center">
                     <div className="text-2xl font-bold text-amber-500">{userData.pendingLeaves}</div>
                     <div className="text-xs text-gray-500">Pending</div>
                   </div>
-                  <div className="bg-white rounded-xl p-4 shadow-sm text-center relative">
+                  <div className="bg-white h-[100px] rounded-xl p-4 shadow-sm text-center relative">
                     <div className="text-2xl font-bold text-emerald-500">{remainingLeaves}</div>
                     <div className="text-xs text-gray-500">Remaining</div>
-                    {/* Encash Leave Button */}
                     <button
                       onClick={() => setShowEncashModal(true)}
-                      className="mt-2 px-3 py-1 text-sm bg-blue-600 text-white rounded hover:bg-blue-700"
+                      className="mt-2 px-3 py-1 h-[25px] text-sm bg-blue-600 text-white rounded hover:bg-blue-700"
                     >
                       Options
                     </button>
@@ -163,12 +194,12 @@ const EmployeeView: React.FC<LeaveRequestProps> = ({ onSubmit, userName = "User"
                 </div>
 
                 {/* Calendar */}
-                <div className="bg-white rounded-xl shadow-sm p-4">
+               <div className="bg-white rounded-xl shadow-sm p-4">
                   <h3 className="font-bold mb-3 text-gray-700 flex items-center">
                     <FaCalendarAlt className="mr-2 text-blue-500" /> Calendar View
                   </h3>
                   <div className="w-full">
-                    <AdvancedCalendar leaves={dummyLeaves} onRangeSelect={handleRangeSelect} />
+                    <AdvancedCalendar leaves={leaves} onRangeSelect={handleRangeSelect} />
                   </div>
                 </div>
               </div>
@@ -180,7 +211,7 @@ const EmployeeView: React.FC<LeaveRequestProps> = ({ onSubmit, userName = "User"
                 <h3 className="text-2xl font-bold text-gray-800 mb-3 flex items-center">
                   <FaClock className="mr-3 text-blue-500" /> Apply for Leave
                 </h3>
-                <form onSubmit={handleSubmit} className="space-y-6 bg-white rounded-2xl shadow-md p-6">
+                <form onSubmit={handleSubmit} className="space-y-6 bg-white rounded-2xl shadow-md p-6 h-[550px]">
                   <div>
                     <label htmlFor="type" className="block text-sm font-semibold">
                       Leave Type
@@ -267,13 +298,7 @@ const EmployeeView: React.FC<LeaveRequestProps> = ({ onSubmit, userName = "User"
           </div>
         </div>
       </div>
-
-      {/* Encashment Modal */}
-      <EncashmentModal
-        visible={showEncashModal}
-        onClose={() => setShowEncashModal(false)}
-        availableLeaves={remainingLeaves}
-      />
+      <EncashmentModal visible={showEncashModal} onClose={() => setShowEncashModal(false)} availableLeaves={remainingLeaves} />
     </div>
   );
 };
