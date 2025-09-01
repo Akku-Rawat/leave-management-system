@@ -1,61 +1,34 @@
+export interface User {
+  id: string;
+  name: string;
+  role: "employee" | "hr" | "boss";
+  department: string;
+  email?: string;
+}
+
 export interface LeaveRequestType {
-  userId: any;
-  employeeId: string;
   id: string;
   employeeName: string;
-  department?: string;
-  date: string;
+  department: string;
   type: string;
+  status: "Pending" | "Approved" | "Rejected";
   startDate: string;
   endDate: string;
   days: number;
-  status: "Pending" | "Approved" | "Rejected";
   reason: string;
+  date: string;
+  userId: string;
+  employeeId: string;
 }
 
 export interface LeaveRequestFormData {
   type: string;
-  duration: string;
   startDate: string;
   endDate: string;
+  duration: "full" | "half";
   reason: string;
-  emergencyContact: string;
 }
 
 export interface LeaveRequestProps {
-  onSubmit?: (data: LeaveRequestFormData) => void;
-  setActiveView?: (view: string) => void;
-  userRole?: 'employee' | 'hr' | 'boss';
-  userName?: string;
-  allRequests?: LeaveRequestType[];
-  initialStartDate?: string;
-  initialEndDate?: string;
-
-}
-
-export interface User {
-  role: "employee" | "hr" | "boss";
-  name: string;
-  id: string;
-  department: string;
-}
-
-export interface LeaveHistoryRecord {
-  id: string;
-  employeeName: string;
-  employeeId: string;
-  department: string;
-  leaveType: string;
-  startDate: string;
-  endDate: string;
-  totalDays: number;
-  appliedDate: string;
-  status: "Approved" | "Rejected" | "Pending";
-  reason: string;
-}
-
-export interface Leave {
-  start: Date;
-  end: Date;
-  status: "approved" | "pending" | "rejected";
+  onSubmit: (data: LeaveRequestFormData) => void;
 }
