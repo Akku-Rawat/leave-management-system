@@ -8,13 +8,10 @@ import {
   FaEyeSlash,
 } from "react-icons/fa";
 import { motion, AnimatePresence } from "framer-motion";
-import type { User } from "../Types";
+// import type { User } from "../Types";
+import type { LoginPageProps } from "../Types";
 
-interface LoginPageProps {
-  onLogin: (user: User) => void;
-}
-
-const LoginPage: React.FC<LoginPageProps> = ({ onLogin }) => {
+const LoginPage: React.FC<LoginPageProps> = ({ onLogin , error:propError }) => {
   const [step, setStep] = useState<"selectSection" | "login">("selectSection");
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
@@ -23,38 +20,43 @@ const LoginPage: React.FC<LoginPageProps> = ({ onLogin }) => {
   const [error, setError] = useState("");
   const [shake, setShake] = useState(false);
 
-  const validUsers = [
-    { username: "emp", password: "emp" },
-    { username: "hr", password: "hr" },
-    { username: "boss", password: "boss" },
-  ];
+const handleLogin = async (e: React.FormEvent) => {
+  e.preventDefault();
+  setError("");
+  setShake(false);
+  setIsLoading(true);
 
-  const handleLogin = (e: React.FormEvent) => {
-    e.preventDefault();
-    setError("");
-    setShake(false);
-    setIsLoading(true);
+  try {
+const response = await fetch("http://localhost:5000/api/auth/login", {
+  method: "POST",
+  headers: { "Content-Type": "application/json" },
+  // Notice: sending email instead of username to match backend expectation
+  body: JSON.stringify({ email: username, password }),
+});
 
-    setTimeout(() => {
-      const match = validUsers.find(
-        (u) => u.username === username && u.password === password
-      );
-      if (match) {
-        onLogin({
-          name: "Employee",
-          id: username,
-          department: "DEVELOPMENT",
-          role:
-            username === "hr" ? "hr" : username === "boss" ? "boss" : "employee",
-        });
-      } else {
-        setError("Invalid credentials");
-        setIsLoading(false);
-        setShake(true);
-        setTimeout(() => setShake(false), 600);
-      }
-    }, 1000);
-  };
+if (!response.ok) throw new Error("Invalid credentials");
+
+const data = await response.json();
+console.log("User object at login:", data.user);
+console.log("Extracted role:", data.user.role);
+ // yeh line response se JSON pehle parse kare
+
+if (data.token) {
+  localStorage.setItem("token", data.token);
+}
+
+onLogin(data.user);
+
+
+  } catch (error) {
+    const errMsg = error instanceof Error ? error.message : String(error);
+    alert("Login error: " + errMsg);
+    setError(errMsg);
+    setShake(true);
+    setTimeout(() => setShake(false), 600);
+    setIsLoading(false);
+  }
+};
 
   if (isLoading) {
     return (

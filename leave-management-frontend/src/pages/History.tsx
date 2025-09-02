@@ -1,5 +1,5 @@
 import React, { useState, useMemo, useEffect } from "react";
-import type { LeaveRequestType } from "../Types";
+import type { LeaveRequestType,User } from "../Types";
 import { FaUserGroup } from "react-icons/fa6";
 import {
   FaCheckCircle,
@@ -17,12 +17,12 @@ import {
   FaUser
 } from "react-icons/fa";
 
-type UserRole = 'employee' | 'hr' | 'boss';
 
 interface HistoryProps {
+  leaveRequests?: LeaveRequestType[];
   setActiveView?: (view: string) => void;
-  currentUserId?: string;
-  userRole?: UserRole;
+  currentUserId: string;
+  userRole: User["role"];
 }
 
 const History: React.FC<HistoryProps> = ({ 
@@ -39,56 +39,117 @@ const History: React.FC<HistoryProps> = ({
   const [viewMode, setViewMode] = useState<'personal' | 'all'>('personal');
 
   // Fetch data from API
-  useEffect(() => {
-    async function fetchLeaveRequests() {
-      try {
-        let apiEndpoint = "";
-        
-        if (userRole === 'employee') {
-          apiEndpoint = `/api/leaves/history/user/${currentUserId}`;
-        } else if (userRole === 'hr') {
-          if (viewMode === 'personal') {
-            apiEndpoint = `/api/leaves/history/user/${currentUserId}`;
-          } else {
-            apiEndpoint = `/api/leaves/history/all`;
-          }
-        } else if (userRole === 'boss') {
+useEffect(() => {
+  async function fetchLeaveRequests() {
+    try {
+      console.log("History component mounted, fetching leave requests");
+      let apiEndpoint = "";
+
+      if (userRole === 'employee') {
+        apiEndpoint = `/api/leaves/my`;
+      } else if (userRole === 'hr') {
+        if (viewMode === 'personal') {
+          apiEndpoint = `/api/leaves/my`;
+        } else {
           apiEndpoint = `/api/leaves/history/all`;
         }
-
-        const response = await fetch(apiEndpoint);
-        if (!response.ok) throw new Error("Failed to fetch leave requests");
-        const data = await response.json();
-        setLeaveRequests(data);
-      } catch (error) {
-        console.error("Error fetching leave requests:", error);
+      } else if (userRole === 'boss') {
+        apiEndpoint = `/api/leaves/history/all`;
       }
-    }
-    
-    fetchLeaveRequests();
-  }, [currentUserId, userRole, viewMode]);
 
-  // Filter requests based on user role and view mode
-  const userFilteredRequests = useMemo(() => {
-    if (userRole === 'employee') {
-      return leaveRequests.filter(req => req.employeeId === currentUserId || req.userId === currentUserId);
-    } else if (userRole === 'hr') {
-      if (viewMode === 'personal') {
-        return leaveRequests.filter(req => req.userId === currentUserId || req.employeeId === currentUserId);
+      const token = localStorage.getItem("token");
+
+      const response = await fetch(apiEndpoint, {
+        headers: {
+          'Accept': 'application/json',
+          ...(token ? { 'Authorization': `Bearer ${token}` } : {}),
+        },
+      });
+
+      const contentType = response.headers.get('content-type');
+      if (!contentType || !contentType.includes('application/json')) {
+        console.error("Backend returned non-JSON response:", await response.text());
+        return;
+      }
+
+      if (!response.ok) {
+        throw new Error(`Server responded with status: ${response.status}`);
+      }
+
+      const data = await response.json();
+      console.log("API Response data:", data);
+
+      const capitalizeFirstLetter = (s: string) =>
+        s.charAt(0).toUpperCase() + s.slice(1).toLowerCase();
+
+     const mappedData = data.map((item: any) => {
+      console.log('API Date:', item.created_at);
+const appliedDate = item.created_at && !isNaN(new Date(item.created_at).getTime())
+  ? new Date(new Date(item.created_at).toLocaleString('en-US', { timeZone: 'Asia/Kolkata' })).toLocaleDateString('en-GB')
+  : new Date(new Date(item.start_date).toLocaleString('en-US', { timeZone: 'Asia/Kolkata' })).toLocaleDateString('en-GB');
+
+
+  return {
+    id: item.leave_id,
+    userId: item.user_id,
+    employeeId: item.user_id,
+    startDate: item.start_date,
+    endDate: item.end_date,
+    type: item.type,
+    reason: item.reason,
+    status: capitalizeFirstLetter(item.status),
+    employeeName: item.user?.name || "Unknown",
+    date: appliedDate,
+    days:
+      Math.ceil(
+        (new Date(item.end_date).getTime() -
+          new Date(item.start_date).getTime()) /
+          (1000 * 60 * 60 * 24)
+      ) + 1,
+  };
+});
+
+
+      setLeaveRequests(mappedData);
+    } catch (error) {
+      console.error("Error fetching leave requests:", error);
+      setLeaveRequests([]);
+    }
+  }
+
+  fetchLeaveRequests();
+}, [currentUserId, userRole, viewMode]);
+const currentIdStr = String(currentUserId);
+
+
+const userFilteredRequests = useMemo(() => {
+  return leaveRequests.filter(req => {
+    const empIdStr = String(req.employeeId || "");
+    const userIdStr = String(req.userId || "");
+    if (userRole === "employee") {
+      return empIdStr === currentIdStr || userIdStr === currentIdStr;
+    } else if (userRole === "hr") {
+      if (viewMode === "personal") {
+        return empIdStr === currentIdStr || userIdStr === currentIdStr;
       } else {
-        // For 'all' view, show all employees' data but exclude HR's own data
-        return leaveRequests.filter(req => req.userId !== currentUserId && req.employeeId !== currentUserId);
+        return empIdStr !== currentIdStr && userIdStr !== currentIdStr;
       }
-    } else if (userRole === 'boss') {
-      return leaveRequests;
+    } else if (userRole === "boss") {
+      return true;
     }
-    return [];
-  }, [leaveRequests, currentUserId, userRole, viewMode]);
+    return false;
+  });
+}, [leaveRequests, currentUserId, userRole, viewMode]);
+console.log("Current User ID String:", currentIdStr);
+console.log("Leave Requests:", leaveRequests);
+console.log("Filtered User Requests:", userFilteredRequests);
+
+
 
   // Analytics calculation
   const analytics = useMemo(() => {
     const approved = userFilteredRequests.filter((r) => r.status === "Approved");
-    const pending = userFilteredRequests.filter((r) => r.status === "Pending");
+    const pending = userFilteredRequests.filter((r) => r.status === "pending");
     const rejected = userFilteredRequests.filter((r) => r.status === "Rejected");
     const totalApprovedDays = approved.reduce((sum, req) => sum + req.days, 0);
 
@@ -130,10 +191,10 @@ const History: React.FC<HistoryProps> = ({
   const getStatusConfig = (status: string) => {
     const configs = {
       Approved: { bg: "bg-emerald-100", text: "text-emerald-700", icon: <FaCheckCircle className="w-3 h-3" /> },
-      Pending: { bg: "bg-amber-100", text: "text-amber-700", icon: <FaClock className="w-3 h-3" /> },
+      pending: { bg: "bg-amber-100", text: "text-amber-700", icon: <FaClock className="w-3 h-3" /> },
       Rejected: { bg: "bg-red-100", text: "text-red-700", icon: <FaTimesCircle className="w-3 h-3" /> },
     };
-    return configs[status as keyof typeof configs] || configs["Pending"];
+    return configs[status as keyof typeof configs] || configs["pending"];
   };
 
   const formatDatePeriod = (start: string, end: string) => {
@@ -294,7 +355,7 @@ const History: React.FC<HistoryProps> = ({
                     className="px-3 py-2 text-sm border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 bg-white"
                   >
                     <option value="All">All Status</option>
-                    <option value="Pending">Pending</option>
+                    <option value="pending">pending</option>
                     <option value="Approved">Approved</option>
                     <option value="Rejected">Rejected</option>
                   </select>
@@ -367,7 +428,7 @@ const History: React.FC<HistoryProps> = ({
                     <th className="p-2 text-left">Employee</th>
                     <th className="p-2">Total</th>
                     <th className="p-2">Approved</th>
-                    <th className="p-2">Pending</th>
+                    <th className="p-2">pending</th>
                     <th className="p-2">Rejected</th>
                     <th className="p-2">Days Used</th>
                   </tr>
@@ -377,7 +438,7 @@ const History: React.FC<HistoryProps> = ({
                     userFilteredRequests.reduce((acc, req) => {
                       const name = req.employeeName || "Unknown";
                       if (!acc[name]) {
-                        acc[name] = { total: 0, Approved: 0, Pending: 0, Rejected: 0, days: 0 };
+                        acc[name] = { total: 0, Approved: 0, pending: 0, Rejected: 0, days: 0 };
                       }
                       acc[name].total += 1;
                       acc[name][req.status] += 1;
@@ -385,13 +446,13 @@ const History: React.FC<HistoryProps> = ({
                         acc[name].days += req.days;
                       }
                       return acc;
-                    }, {} as Record<string, { total: number; Approved: number; Pending: number; Rejected: number; days: number }>)
+                    }, {} as Record<string, { total: number; Approved: number; pending: number; Rejected: number; days: number }>)
                   ).map(([employee, stats]) => (
                     <tr key={employee} className="border-t">
                       <td className="p-2 text-left font-medium">{employee}</td>
                       <td className="p-2 text-center">{stats.total}</td>
                       <td className="p-2 text-center text-emerald-600">{stats.Approved}</td>
-                      <td className="p-2 text-center text-amber-600">{stats.Pending}</td>
+                      <td className="p-2 text-center text-amber-600">{stats.pending}</td>
                       <td className="p-2 text-center text-red-600">{stats.Rejected}</td>
                       <td className="p-2 text-center">{stats.days}</td>
                     </tr>
@@ -484,12 +545,12 @@ const History: React.FC<HistoryProps> = ({
                             <span className="text-slate-600">{req.days} days</span>
                           </div>
                           <div className="text-slate-500">
-                            Applied: {new Date(req.date).toLocaleDateString("en-GB")}
+                           Applied: {req.date}
                           </div>
                           <div className="text-right">
                             <span className={`px-2 py-1 rounded-full text-xs font-medium ${
                               req.status === 'Approved' ? 'bg-green-100 text-green-700' :
-                              req.status === 'Pending' ? 'bg-yellow-100 text-yellow-700' :
+                              req.status === 'pending' ? 'bg-yellow-100 text-yellow-700' :
                               'bg-red-100 text-red-700'
                             }`}>
                               {req.status}
@@ -511,7 +572,7 @@ const History: React.FC<HistoryProps> = ({
                             <FaEye className="w-3 h-3 mr-1 inline" />
                             Details
                           </button>
-                          {req.status === "Pending" && (
+                          {req.status === "pending" && (
                             <button
                               onClick={() => handleWithdraw(req)}
                               className="px-3 py-1.5 bg-white text-red-600 border border-red-200 rounded-lg hover:bg-red-50 transition-colors text-xs font-medium shadow-sm"

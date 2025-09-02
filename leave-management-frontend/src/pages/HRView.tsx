@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { FaUsers, FaCheckCircle, FaTimesCircle, FaClipboardList } from "react-icons/fa";
-import type { LeaveRequestType } from "../Types";
+import type { LeaveRequestType ,LeaveStatus} from "../Types";
 
 const HRView: React.FC = () => {
   const [requests, setRequests] = useState<LeaveRequestType[]>([]);
@@ -8,7 +8,12 @@ const HRView: React.FC = () => {
   useEffect(() => {
     async function fetchRequests() {
       try {
-        const res = await fetch("/api/leave-requests"); // API endpoint को अपने backend के अनुसार बदलें
+        const token = localStorage.getItem("token");
+        const res = await fetch(`/api/leaves/all`, {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        });
         if (!res.ok) throw new Error("Failed to fetch leave requests");
         const data = await res.json();
         setRequests(data);
@@ -19,21 +24,50 @@ const HRView: React.FC = () => {
     fetchRequests();
   }, []);
 
-  const handleAction = async (id: string, action: "Approved" | "Rejected") => {
-    try {
-      const res = await fetch(`/api/leave-requests/${id}/status`, {
-        method: "PUT",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ status: action }),
-      });
-      if (!res.ok) throw new Error("Failed to update status");
-      setRequests(prev =>
-        prev.map(req => (req.id === id ? { ...req, status: action } : req))
-      );
-    } catch (error) {
-      alert("Failed to update status: " + error);
+ const handleAction = async (leave_id: string, action: "Approved" | "Rejected") => {
+  try {
+    let url = "";
+    let method = "POST"; // backend expects POST
+
+    // Obtain token from storage (localStorage assumed)
+    const token = localStorage.getItem("token");
+    if (!token) {
+      alert("You must be logged in");
+      return;
     }
-  };
+
+    // Construct correct URL based on action and leave request id
+    if (action === "Approved") {
+      url = `/api/leaves/approve/${leave_id}`;
+    } else if (action === "Rejected") {
+      url = `/api/leaves/reject/${leave_id}`;
+    } else {
+      throw new Error("Invalid action");
+    }
+
+    // Call backend API with Authorization header
+    const res = await fetch(url, {
+      method,
+      headers: {
+        Authorization: `Bearer ${token}`,
+        "Content-Type": "application/json",
+      },
+    });
+
+    if (!res.ok) throw new Error("Failed to update status");
+
+    // Update local state to reflect new status on that leave request
+    setRequests(prev =>
+      prev.map(req =>
+        req.id === leave_id
+          ? { ...req, status: action.toLowerCase() as LeaveStatus }
+          : req
+      )
+    );
+  } catch (error) {
+    alert("Failed to update status: " + error);
+  }
+};
 
   return (
     <div className="h-full bg-gradient-to-br from-gray-50 via-blue-50 to-white p-6">
@@ -63,7 +97,7 @@ const HRView: React.FC = () => {
                   </div>
                   <div className="bg-white rounded-xl p-4 shadow border border-gray-100">
                     <div className="text-3xl font-bold text-amber-600">
-                      {requests.filter(r => r.status === "Pending").length}
+                      {requests.filter(r => r.status === "pending").length}
                     </div>
                     <div className="text-gray-600">Pending</div>
                   </div>
@@ -99,16 +133,16 @@ const HRView: React.FC = () => {
                       }`}>{req.status}</span>
                     </div>
 
-                    {req.status === "Pending" && (
+                    {req.status === "pending" && (
                       <div className="mt-4 flex space-x-4">
                         <button
-                          onClick={() => handleAction(req.id, "Approved")}
+                          onClick={() => handleAction(req.leave_id, "Approved")}
                           className="flex items-center px-5 py-2 bg-green-100 hover:bg-green-200 text-green-700 rounded-lg transition"
                         >
                           <FaCheckCircle className="mr-2" /> Approve
                         </button>
                         <button
-                          onClick={() => handleAction(req.id, "Rejected")}
+                          onClick={() => handleAction(req.leave_id, "Rejected")}
                           className="flex items-center px-5 py-2 bg-red-100 hover:bg-red-200 text-red-700 rounded-lg transition"
                         >
                           <FaTimesCircle className="mr-2" /> Reject

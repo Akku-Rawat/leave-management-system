@@ -1,70 +1,19 @@
 import React, { useState, useEffect } from "react";
 import AdvancedCalendar from "./Calendar";
 import { FaUsers, FaCalendarAlt, FaClock } from "react-icons/fa";
-import type { LeaveRequestProps } from "../Types";
-
-const EncashmentModal: React.FC<{
-  visible: boolean;
-  onClose: () => void;
-  availableLeaves: number;
-}> = ({ visible, onClose, availableLeaves }) => {
-  const [option, setOption] = useState<"cash" | "carry" | null>(null);
-
-  if (!visible) return null;
-
-  return (
-   <div className="fixed inset-0 bg-black bg-opacity-40 flex items-center justify-center z-50">
-      <div className="bg-white rounded p-6 max-w-md w-full shadow-lg">
-        <h3 className="text-xl font-semibold mb-4">Encashment Request</h3>
-        <p className="mb-4">
-          Available Leaves: <strong>{availableLeaves}</strong>
-        </p>
-        <div className="mb-6">
-          <label className="inline-flex items-center mr-6">
-            <input
-              type="radio"
-              name="encashOption"
-              value="cash"
-              onChange={() => setOption("cash")}
-              className="form-radio"
-            />
-            <span className="ml-2">Cash Payout</span>
-          </label>
-          <label className="inline-flex items-center">
-            <input
-              type="radio"
-              name="encashOption"
-              value="carry"
-              onChange={() => setOption("carry")}
-              className="form-radio"
-            />
-            <span className="ml-2">Carry Forward</span>
-          </label>
-        </div>
-        <div className="flex justify-end space-x-4">
-          <button onClick={onClose} className="px-4 py-2 border rounded text-gray-700 hover:bg-gray-100">
-            Cancel
-          </button>
-          <button
-            disabled={!option}
-            onClick={() => {
-              alert(`You selected: ${option}`);
-              onClose();
-            }}
-            className={`px-4 py-2 text-white rounded ${
-              option ? "bg-blue-600 hover:bg-blue-700" : "bg-blue-300 cursor-not-allowed"
-            }`}
-          >
-            Submit
-          </button>
-        </div>
-      </div>
-    </div>
-  );
-};
+import type { LeaveRequestProps, Leave, LeaveStatus } from "../Types";
 
 const EmployeeView: React.FC<LeaveRequestProps> = ({ onSubmit, userName = "User" }) => {
-  const [formData, setFormData] = useState({
+  type LeaveFormData = {
+    type: string;
+    duration: "full" | "first" | "second";
+    startDate: string;
+    endDate: string;
+    reason: string;
+    emergencyContact: string;
+  };
+
+  const [formData, setFormData] = useState<LeaveFormData>({
     type: "",
     duration: "full",
     startDate: "",
@@ -72,10 +21,11 @@ const EmployeeView: React.FC<LeaveRequestProps> = ({ onSubmit, userName = "User"
     reason: "",
     emergencyContact: "",
   });
+
   const [showEncashModal, setShowEncashModal] = useState(false);
-  const [leaves, setLeaves] = useState<
-    { start: Date; end: Date; status: string }[]
-  >([]);
+
+  const [leaves, setLeaves] = useState<Leave[]>([]);
+
   const [userData, setUserData] = useState({
     totalLeaves: 0,
     usedLeaves: 0,
@@ -92,29 +42,55 @@ const EmployeeView: React.FC<LeaveRequestProps> = ({ onSubmit, userName = "User"
   };
 
   useEffect(() => {
-    async function fetchData() {
-      try {
-        const leavesRes = await fetch("/api/leaves/my");
-        const leavesJson = await leavesRes.json();
-        const formattedLeaves = leavesJson.map((leave: any) => ({
-          start: new Date(leave.startDate),
-          end: new Date(leave.endDate),
-          status: leave.status,
-        }));
-        setLeaves(formattedLeaves);
+ async function fetchData() {
+  try {
+    const token = localStorage.getItem("token"); // apne token storage ke hisab se adjust karo
 
-        const statsRes = await fetch("/api/users/me/stats");
-        const statsJson = await statsRes.json();
-        setUserData({
-          totalLeaves: statsJson.totalLeaves,
-          usedLeaves: statsJson.usedLeaves,
-          pendingLeaves: statsJson.pendingLeaves,
-        });
-      } catch (error) {
-        console.error("Error fetching data", error);
-      }
+    const leavesRes = await fetch("/api/leaves/my", {
+      headers: {
+        ...(token ? { "Authorization": `Bearer ${token}` } : {}),
+      },
+    });
+    const leavesJson = await leavesRes.json();
+
+    if (!Array.isArray(leavesJson)) {
+      throw new Error('Invalid leaves data');
     }
-    fetchData();
+
+   const formattedLeaves = leavesJson.map((leave: any) => {
+  const startDate = leave.startDate && !isNaN(Date.parse(leave.startDate))
+    ? new Date(leave.startDate).toISOString()
+    : null;
+  
+  const endDate = leave.endDate && !isNaN(Date.parse(leave.endDate))
+    ? new Date(leave.endDate).toISOString()
+    : null;
+
+  return {
+    start: startDate,
+    end: endDate,
+    status: leave.status as LeaveStatus,
+  };
+});
+    setLeaves(formattedLeaves);
+
+    const statsRes = await fetch("/api/leaves/stats", {
+      headers: {
+        ...(token ? { "Authorization": `Bearer ${token}` } : {}),
+      },
+    });
+    const statsJson = await statsRes.json();
+    setUserData({
+      totalLeaves: statsJson.totalLeaves,
+      usedLeaves: statsJson.usedLeaves,
+      pendingLeaves: statsJson.pendingLeaves,
+    });
+  } catch (error) {
+    console.error("Error fetching data", error);
+  }
+}
+fetchData();
+
   }, []);
 
   const handleRangeSelect = (range: { from?: Date; to?: Date } | undefined) => {
@@ -135,75 +111,87 @@ const EmployeeView: React.FC<LeaveRequestProps> = ({ onSubmit, userName = "User"
     setFormData((prev) => ({ ...prev, [id]: value }));
   };
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    try {
-      const response = await fetch("/api/leaves/create", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(formData),
-      });
-      if (!response.ok) throw new Error("Failed to submit leave request");
-      await response.json();
-      alert("Leave request submitted successfully.");
-      if (onSubmit) onSubmit(formData);
-      // Optionally reset form here
-    } catch (error) {
-      alert("Error submitting leave request: " );
+ const handleSubmit = async (e: React.FormEvent) => {
+  e.preventDefault();
+  try {
+    // localStorage se token uthao, agar aapka token wahan stored hai
+    const token = localStorage.getItem("token");
+
+    const response = await fetch("/api/leaves/create", {
+      method: "POST",
+      credentials: "include", // agar aap cookie-based auth use kar rahe ho, nahi toh hatao
+      headers: {
+        "Content-Type": "application/json",
+        ...(token ? { "Authorization": `Bearer ${token}` } : {}),
+      },
+      body: JSON.stringify(formData),
+    });
+
+    if (!response.ok) {
+      // Backend se error message lene ki koshish karo
+      const errorText = await response.text();
+      throw new Error(`Failed to submit leave request: ${response.status} - ${errorText}`);
     }
-  };
+
+    await response.json();
+
+    alert("Leave request submitted successfully.");
+    if (onSubmit) onSubmit(formData);
+  } catch (error: any) {
+    console.error("Error submitting leave request:", error);
+    alert(`Error submitting leave request: ${error.message || error}`);
+  }
+};
+
 
   return (
-    <div className=" bg-gradient-to-br from-white via-slate-50 to-blue-50 h-[650px] py-8 px-6">
+    <div className="bg-gradient-to-br from-white via-slate-50 to-blue-50 h-[650px] py-8 px-6">
       <div className="max-w-6xl mx-auto">
         <div className="bg-white rounded-2xl shadow-md border border-gray-100 overflow-hidden">
           <div className="flex flex-col lg:flex-row">
-            {/* LEFT SIDE - Stats + Calendar */}
-              <div className="lg:w-2/5 h-[650px] bg-gradient-to-br from-slate-100 to-blue-100 px-8 pt-2 pb-8 relative">
-              <div className="relative z-10 space-y-4">
-                <div>
-                  <h2 className="text-xl font-bold mb-3 flex items-center text-gray-800">
-                    <FaUsers className="mr-3 text-blue-500" /> Employee Dashboard
-                  </h2>
-                </div>
+          {/* Single Card Container */}
+<div className="lg:w-2/5 h-[650px] bg-white rounded-xl shadow-lg p-6 flex flex-col overflow-auto">
+  {/* Header */}
+  <h2 className="text-xl font-bold mb-6 flex items-center text-gray-800">
+    <FaUsers className="mr-3 text-blue-500" /> Employee Dashboard
+  </h2>
 
-                {/* Stats Cards */}
-                  <div className="grid grid-cols-2 gap-4">
-                  <div className="bg-white h-[70px] rounded-xl p-4 shadow-sm text-center">
-                    <div className="text-2xl font-bold text-gray-800">{userData.totalLeaves}</div>
-                    <div className="text-xs text-gray-500">Total Balance</div>
-                  </div>
-                  <div className="bg-white h-[70px] rounded-xl p-4 shadow-sm text-center">
-                    <div className="text-2xl font-bold text-gray-800">{userData.usedLeaves}</div>
-                    <div className="text-xs text-gray-500">Used</div>
-                  </div>
-                  <div className="bg-white h-[100px] rounded-xl p-4 shadow-sm text-center">
-                    <div className="text-2xl font-bold text-amber-500">{userData.pendingLeaves}</div>
-                    <div className="text-xs text-gray-500">Pending</div>
-                  </div>
-                  <div className="bg-white h-[100px] rounded-xl p-4 shadow-sm text-center relative">
-                    <div className="text-2xl font-bold text-emerald-500">{remainingLeaves}</div>
-                    <div className="text-xs text-gray-500">Remaining</div>
-                    <button
-                      onClick={() => setShowEncashModal(true)}
-                      className="mt-2 px-3 py-1 h-[25px] text-sm bg-blue-600 text-white rounded hover:bg-blue-700"
-                    >
-                      Options
-                    </button>
-                  </div>
-                </div>
+  {/* Stats Cards - grid with gaps */}
+  <div className="grid grid-cols-2 gap-4 mb-6">
+    <div className="bg-slate-100 h-[70px] rounded-xl p-4 shadow-sm text-center">
+      <div className="text-2xl font-bold text-gray-800">{userData.totalLeaves}</div>
+      <div className="text-xs text-gray-500">Total Balance</div>
+    </div>
+    <div className="bg-slate-100 h-[70px] rounded-xl p-4 shadow-sm text-center">
+      <div className="text-2xl font-bold text-gray-800">{userData.usedLeaves}</div>
+      <div className="text-xs text-gray-500">Used</div>
+    </div>
+    <div className="bg-slate-100 h-[100px] rounded-xl p-4 shadow-sm text-center">
+      <div className="text-2xl font-bold text-amber-500">{userData.pendingLeaves}</div>
+      <div className="text-xs text-gray-500">Pending</div>
+    </div>
+    <div className="bg-slate-100 h-[100px] rounded-xl p-4 shadow-sm text-center relative">
+      <div className="text-2xl font-bold text-emerald-500">{remainingLeaves}</div>
+      <div className="text-xs text-gray-500">Remaining</div>
+      <button
+        onClick={() => setShowEncashModal(true)}
+        className="mt-2 px-3 py-1 h-[25px] text-sm bg-blue-600 text-white rounded hover:bg-blue-700"
+      >
+        Options
+      </button>
+    </div>
+  </div>
 
-                {/* Calendar */}
-               <div className="bg-white rounded-xl shadow-sm p-4">
-                  <h3 className="font-bold mb-3 text-gray-700 flex items-center">
-                    <FaCalendarAlt className="mr-2 text-blue-500" /> Calendar View
-                  </h3>
-                  <div className="w-full">
-                    <AdvancedCalendar leaves={leaves} onRangeSelect={handleRangeSelect} />
-                  </div>
-                </div>
-              </div>
-            </div>
+  {/* Calendar */}
+  <div className="flex-1 bg-slate-100 rounded-xl shadow-sm p-4 overflow-hidden ">
+    <h3 className="font-bold mb-3 text-gray-700 flex items-center">
+      <FaCalendarAlt className="mr-2 text-blue-500" /> Calendar View
+    </h3>
+    <div className="w-full h-full">
+      <AdvancedCalendar leaves={leaves} onRangeSelect={handleRangeSelect} />
+    </div>
+  </div>
+</div>
 
             {/* RIGHT SIDE - Apply Form */}
             <div className="lg:w-3/5 p-8 bg-slate-50">
@@ -298,7 +286,7 @@ const EmployeeView: React.FC<LeaveRequestProps> = ({ onSubmit, userName = "User"
           </div>
         </div>
       </div>
-      <EncashmentModal visible={showEncashModal} onClose={() => setShowEncashModal(false)} availableLeaves={remainingLeaves} />
+      {/* <EncashmentModal visible={showEncashModal} onClose={() => setShowEncashModal(false)} availableLeaves={remainingLeaves} /> */}
     </div>
   );
 };

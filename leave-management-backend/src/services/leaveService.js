@@ -5,15 +5,14 @@ export const applyLeave = async (data, user) => {
   const leave = await prisma.leaveRequest.create({
     data: {
       user_id: user.user_id,
-      start_date: new Date(data.start_date),
-      end_date: new Date(data.end_date),
-      reason: data.reason || null,  // optional in schema
+      start_date: new Date(data.startDate),  // camelCase keys का उपयोग करें
+      end_date: new Date(data.endDate),
+      reason: data.reason || null,
       type: data.type,
-      status: "pending"  // default status at creation
+      status: "pending",
     },
   });
-
-  await sendLeaveMail(leave, user);
+    await sendLeaveMail(leave, user);
   return leave;
 };
 
@@ -34,3 +33,4 @@ export const updateLeaveStatus = async (leave_id, status) => {
     throw err;
   }
 };
+

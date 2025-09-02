@@ -1,22 +1,26 @@
 import React, { useState} from "react";
 import { createPortal } from "react-dom";
+
+import type { User } from "../Types";
 // import { Dialog } from "@headlessui/react";
 import { FaCog, FaBell, FaUserCircle } from "react-icons/fa";
 
-interface User {
-  role: "employee" | "hr" | "boss";
-  name: string;
-  id: string;
-  department: string;
-}
+// interface User {
+//   role: "employee" | "hr" | "boss";
+//   name: string;
+//   id: string;
+//   department: string;
+// }
 
-interface HeaderProps {
+
+export interface HeaderProps {
   currentUser: User;
   onLogout: () => void;
 }
 
+
 const DropdownPortal: React.FC<{
-  anchorRef: React.RefObject<HTMLButtonElement>;
+  anchorRef: React.RefObject<HTMLButtonElement | null>;
   onClose: () => void;
   children: React.ReactNode;
 }> = ({ anchorRef, onClose, children }) =>{
@@ -79,25 +83,42 @@ const Header: React.FC<HeaderProps> = ({ currentUser, onLogout }) => {
   const [showSettings, setShowSettings] = useState(false);
   const [showProfile, setShowProfile] = React.useState(false);
 
-  const notifRef = React.useRef<HTMLButtonElement>(null);
-  const settingsRef = React.useRef<HTMLButtonElement>(null);
-  const profileRef = React.useRef<HTMLButtonElement>(null);
+  const notifRef = React.useRef<HTMLButtonElement | null>(null);
+const settingsRef = React.useRef<HTMLButtonElement | null>(null);
+const profileRef = React.useRef<HTMLButtonElement | null>(null);
 
   // Fetch notifications from API
-  React.useEffect(() => {
-    async function fetchNotifications() {
-      try {
-        const response = await fetch("/api/notifications"); // अपनी notification API URL डालें
-        if (!response.ok) throw new Error("Failed to fetch notifications");
-        const data = await response.json();
-        setNotifications(data);
-      } catch (error) {
-        console.error("Error fetching notifications:", error);
+ React.useEffect(() => {
+  async function fetchNotifications() {
+    try {
+      const res = await fetch("/api/notifications", {
+        headers: {
+          'Accept': 'application/json'
+        },
+        credentials: 'include'
+      });
+      
+      // Check if response is JSON
+      const contentType = res.headers.get('content-type');
+      if (!contentType || !contentType.includes('application/json')) {
+        console.error("Backend returned non-JSON response:", await res.text());
+        return; // Exit early without throwing
       }
+      
+      if (!res.ok) {
+        throw new Error(`Server responded with status: ${res.status}`);
+      }
+      
+      const data = await res.json();
+      setNotifications(data);
+    } catch (error) {
+      console.error("Fetch error:", error);
+      // Set empty notifications instead of failing
+      setNotifications([]);
     }
-
-    fetchNotifications();
-  }, []);
+  }
+  fetchNotifications();
+}, []);
 
   const handleSettingsAction = (action: string) => {
     setShowSettings(false);
@@ -125,7 +146,8 @@ const Header: React.FC<HeaderProps> = ({ currentUser, onLogout }) => {
     }
   };
 
-  const iconSize = 24;
+  const notificationIconSize = 25;
+  const iconSize = 30;
 
   return (
     <header className="bg-white shadow border-b relative z-50">
@@ -133,26 +155,26 @@ const Header: React.FC<HeaderProps> = ({ currentUser, onLogout }) => {
         <div className="flex items-center h-16">
           <div className="flex items-center">
             <FaUserCircle
-              size={28}
+              size={30}
               color="#2563eb"
-              className="mr-3"
+              className="mr-3 relative left-[-65px]"
               aria-label="ROLAFACE Logo"
             />
-            <span className="text-2xl font-bold text-gray-900 select-none">
-              ROLAFACE
+         <span className="text-2xl font-bold text-gray-900 select-none relative left-[-70px]">
+           ROLAFACE
             </span>
           </div>
 
           <div className="flex-1" />
 
-          <div className="flex items-center space-x-6">
+          <div className="flex items-center space-x-6 relative right-[-69px]">
             <button
               ref={notifRef}
               onClick={() => setShowNotifications(!showNotifications)}
               className="relative p-2 rounded-full hover:bg-gray-100 text-gray-600"
               aria-label="Notifications"
             >
-              <FaBell size={iconSize} />
+              <FaBell size={notificationIconSize} />
               {notifications.length > 0 && (
                 <span className="absolute -top-1 -right-1 w-5 h-5 bg-red-500 text-white text-xs rounded-full flex items-center justify-center select-none">
                   {notifications.length}

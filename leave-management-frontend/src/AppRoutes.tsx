@@ -3,100 +3,85 @@ import React, { useState } from "react";
 import Header from "./components/Header";
 import Sidebar from "./components/Sidebar";
 
-
 import LeaveRequest from "./pages/LeaveRequest";
 import History from "./pages/History";
-// import ApplyLeave from "./pages/ApplyLeave";
-import type { LeaveRequestType } from "./Types";
-import type { LeaveRequestFormData } from "./Types";
-
-
-
-
+import type { LeaveRequestType, LeaveRequestFormData, User } from "./Types";
 
 const AppRoutes: React.FC = () => {
   const [activeView, setActiveView] = useState("dashboard");
   const [leaveRequests, setLeaveRequests] = useState<LeaveRequestType[]>([]);
-  // const [notification, setNotification] = useState<{ title: string; message: string; type: "success" | "error" | "warning"; } | null>(null);
+  const [leaveFormStartDate, setLeaveFormStartDate] = useState<string>("");
+  const [leaveFormEndDate, setLeaveFormEndDate] = useState<string>("");
 
-  const [leaveFormStartDate] = useState<string>("");
-  const [leaveFormEndDate] = useState<string>("");
-
- 
+  const currentUser: User = {
+    id: "1",
+    name: "John Doe",
+    role: "employee",
+    department: "Engineering",
+  };
 
   const addLeaveRequest = (data: LeaveRequestFormData) => {
     const start = new Date(data.startDate);
     const end = new Date(data.endDate);
     let days = (end.getTime() - start.getTime()) / (1000 * 3600 * 24) + 1;
-    if (data.duration === "half") days = 0.5;
+    if (data.duration === "first" || data.duration === "second") days = 0.5;
 
     const newRequest: LeaveRequestType = {
-      id: (leaveRequests.length + 1).toString(),
+     id: (leaveRequests.length + 1).toString(),
       date: new Date().toISOString().split("T")[0],
-      status: "Pending",
+      status: "pending",
       type: data.type,
       days: days,
       reason: data.reason,
-      employeeName: "",
-      startDate: "",
-      endDate: ""
-      
+      employeeName: currentUser.name,
+      startDate: data.startDate,
+      endDate: data.endDate,
+      employeeId: currentUser.id,
+      userId: currentUser.id,
+      department: currentUser.department,
     };
- 
-// Removed incorrect BossView usage from here
 
-
-
-
-
-     setLeaveRequests(prev => [newRequest, ...prev]);
-    // setNotification({
-    //   title: "Success",
-    //   message: "Leave request submitted successfully!",
-    //   type: "success",
-    // });
-    // setActiveView("history");
+    setLeaveRequests((prev) => [newRequest, ...prev]);
+    setActiveView("history");
   };
-
-  // const handleDateRangeSelect = (start: string, end: string) => {
-  //   setLeaveFormStartDate(start);
-  //   setLeaveFormEndDate(end);
-  //   setActiveView("applyleave");
-  // };
-
-  // const closeNotification = () => setNotification(null);
 
   return (
     <div className="min-h-screen flex flex-col">
-      <Header
-        currentUser={{ id: "1", name: "John Doe", role: "employee", department: "Engineering" }} // Replace with actual user data as needed
-        onLogout={() => {
-          // Implement logout logic here
-          setActiveView("dashboard");
-        }}
-      />
+      <Header currentUser={currentUser} onLogout={() => setActiveView("dashboard")} />
       <div className="flex flex-1">
-        <Sidebar activeView={activeView} onChangeView={setActiveView} userRole="employee" />
+        <Sidebar
+  activeView={activeView}
+  onChangeView={setActiveView}
+  userRole={currentUser.role}
+  currentUserName={currentUser.name}
+/>
+
 
         <main className="flex-1 p-8 bg-gray-50 overflow-auto">
-          {/* {activeView === "dashboard" && <Dashboard setActiveView={setActiveView} />} */}
-          {activeView === "apply" && <LeaveRequest onSubmit={addLeaveRequest} setActiveView={setActiveView} />}
-          {activeView === "applyleave" && (
-            <LeaveRequest
-              onSubmit={addLeaveRequest}
-              setActiveView={setActiveView}
-              initialStartDate={leaveFormStartDate}
-               initialEndDate={leaveFormEndDate}
+        {activeView === "apply" && (
+  <LeaveRequest
+    onSubmit={addLeaveRequest}
+    setActiveView={setActiveView}
+    userName={currentUser.name}
+    department={currentUser.department}
+    role={currentUser.role}
+    allRequests={leaveRequests}
+    initialStartDate={leaveFormStartDate}
+    initialEndDate={leaveFormEndDate}
+  />
+)}
+
+
+          {activeView === "history" && (
+            <History
+              leaveRequests={leaveRequests}
+              currentUserId={currentUser.id}
+              userRole={currentUser.role}
             />
           )}
-          {/* {activeView === "calendar" && (
-            <Calendar leaveRequests={leaveRequests} onDateRangeSelect={handleDateRangeSelect} />
-          )} */}
-          {activeView === "history" && <History leaveRequests={leaveRequests} />}
+          {/* Add other views like Dashboard, Calendar etc. if needed */}
         </main>
       </div>
-
-     
     </div>
   );
 };

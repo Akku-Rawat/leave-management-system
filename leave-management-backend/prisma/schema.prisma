@@ -42,6 +42,7 @@ model LeaveRequest {
   reason      String?
   status      Status        @default(pending)
   LeaveAction LeaveAction[]
+  created_at  DateTime      @default(now())
 }
 
 enum Status {

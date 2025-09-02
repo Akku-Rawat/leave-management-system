@@ -8,7 +8,7 @@ interface DocFile {
   title: string;
   allowedRoles: ('employee' | 'hr' | 'boss')[];
   updatedAt: string;
-  isPdf: boolean;
+  isPdf: boolean; 
 }
 
 interface DocumentationProps {
