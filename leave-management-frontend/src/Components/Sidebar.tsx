@@ -35,10 +35,12 @@ const Sidebar: React.FC<SidebarProps> = ({
     if (resolvedRole === "employee") {
       items.push({ id: "apply", icon: <FaPlusCircle />, label: "Apply Leave" });
       items.push({ id: "history", icon: <FaHistory />, label: "History" });
+      items.push({ id: "documentation", icon: <FaBook />, label: "Documentation" });
     } else if (resolvedRole === "hr") {
       items.push({ id: "dashboard", icon: <FaTachometerAlt />, label: "HR Dashboard" });
       items.push({ id: "apply", icon: <FaPlusCircle />, label: "Apply Leave" });
       items.push({ id: "history", icon: <FaHistory />, label: "History" });
+      items.push({ id: "documentation", icon: <FaBook />, label: "Documentation" });
     } else if (resolvedRole === "boss") {
       items.push({ id: "boss-dashboard", icon: <FaTachometerAlt />, label: "Boss Dashboard" });
       items.push({ id: "employees", icon: <FaUsers />, label: "Employees" });

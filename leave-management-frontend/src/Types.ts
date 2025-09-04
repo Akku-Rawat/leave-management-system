@@ -10,7 +10,7 @@ export interface User {
 
 
 // ---------------- LEAVE STATUS ----------------
-export type LeaveStatus = "pending" | "Approved" | "Rejected";
+export type LeaveStatus = "pending" | "approved" | "rejected";
 
 // ---------------- LEAVE ----------------
 export interface Leave {
@@ -23,17 +23,26 @@ export interface Leave {
 export interface LeaveRequestType {
   id: string;
   leave_id: string;
+
+
   employeeId: string; // same as userId but consistent
   userId: string; // keep if needed for mapping
   employeeName: string;
   department: string;
   type: string; // Sick, Casual, etc.
   status: LeaveStatus; // reused type
-  startDate: string;
-  endDate: string;
+  start_date: string;
+  end_date: string;
   days: number;
+   created_at: string;    
   reason: string;
   date: string; // request created date
+  user: {
+    user_id: string;
+    name: string;
+    email: string;
+  };
+  
 }
 
 // ---------------- LEAVE REQUEST FORM ----------------
@@ -58,6 +67,7 @@ export interface LeaveRequestProps {
   initialStartDate?: string;
   initialEndDate?: string;
   allRequests: LeaveRequestType[];
+  currentUser: User;
 }
 
 export interface HistoryProps {

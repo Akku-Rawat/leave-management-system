@@ -48,7 +48,7 @@ const EmployeeHistory: React.FC = () => {
   useEffect(() => {
     async function fetchData() {
       try {
-        const res = await fetch("/api/leaves/history"); // Your backend endpoint
+        const res = await fetch("/api/leaves/emphistory"); // Your backend endpoint
         const data = await res.json();
         setAllRecords(data);
       } catch (error) {

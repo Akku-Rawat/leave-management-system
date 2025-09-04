@@ -27,7 +27,7 @@ CREATE TABLE `LeaveRequest` (
     `start_date` DATETIME(3) NOT NULL,
     `end_date` DATETIME(3) NOT NULL,
     `type` VARCHAR(191) NOT NULL,
-    `reason` VARCHAR(191) NULL,
+    `reason` VARCHAR(15000) NULL,
     `status` ENUM('pending', 'approved', 'rejected', 'partial') NOT NULL DEFAULT 'pending',
 
     PRIMARY KEY (`leave_id`)

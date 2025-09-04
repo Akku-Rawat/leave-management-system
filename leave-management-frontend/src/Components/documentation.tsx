@@ -128,12 +128,12 @@ const Documentation: React.FC<DocumentationProps> = ({ userRole }) => {
                 <div>
                   <span className="font-semibold">{doc.title}</span> <span className="text-sm text-gray-500 ml-2">({doc.updatedAt})</span>
                 </div>
-                <div className="space-x-2">
-                  <button onClick={() => viewDocument(`${doc.id}${doc.isPdf ? ".pdf" : ".md"}`, doc.isPdf)} className="text-blue-600 hover:underline flex items-center space-x-1">
-                    <FaEye /> <span>View</span>
+                <div className="flex items-center space-x-4">
+                  <button onClick={() => viewDocument(`${doc.id}${doc.isPdf ? ".pdf" : ".md"}`, doc.isPdf)} className="text-blue-600 hover:underline flex items-center">
+                    <FaEye className="text-xl" />
                   </button>
-                  <button onClick={() => downloadFile(`${doc.id}${doc.isPdf ? ".pdf" : ".md"}`)} className="text-green-600 hover:underline flex items-center space-x-1">
-                    <FaDownload /> <span>Download</span>
+                  <button onClick={() => downloadFile(`${doc.id}${doc.isPdf ? ".pdf" : ".md"}`)} className="text-green-600 hover:underline flex items-center">
+                    <FaDownload className="text-xl" />
                   </button>
                 </div>
               </li>

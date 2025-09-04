@@ -39,7 +39,7 @@ model LeaveRequest {
   start_date  DateTime
   end_date    DateTime
   type        String
-  reason      String?
+  reason      String?       @db.Text
   status      Status        @default(pending)
   LeaveAction LeaveAction[]
   created_at  DateTime      @default(now())
@@ -50,6 +50,8 @@ enum Status {
   approved
   rejected
   partial
+  withdrawn
+  custom_message
 }
 
 model LeaveBalance {
