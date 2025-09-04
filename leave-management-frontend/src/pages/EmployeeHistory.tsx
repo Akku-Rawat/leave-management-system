@@ -48,7 +48,7 @@ const EmployeeHistory: React.FC = () => {
   useEffect(() => {
     async function fetchData() {
       try {
-        const res = await fetch("/api/leaves/history"); // Your backend endpoint
+        const res = await fetch("/api/leaves/emphistory"); // Your backend endpoint
         const data = await res.json();
         setAllRecords(data);
       } catch (error) {
@@ -319,31 +319,6 @@ const EmployeeHistory: React.FC = () => {
     </div>
   );
 
-  function getStatusColor(status: string) {
-    switch (status) {
-      case "Approved":
-        return "bg-green-100 text-green-800";
-      case "Rejected":
-        return "bg-red-100 text-red-800";
-      case "Pending":
-        return "bg-yellow-100 text-yellow-800";
-      default:
-        return "bg-gray-100 text-gray-800";
-    }
-  }
-
-  function getStatusIcon(status: string) {
-    switch (status) {
-      case "Approved":
-        return <FaCheckCircle className="inline-block mr-1 text-green-600" />;
-      case "Rejected":
-        return <FaTimesCircle className="inline-block mr-1 text-red-600" />;
-      case "Pending":
-        return <FaClock className="inline-block mr-1 text-yellow-600" />;
-      default:
-        return null;
-    }
-  }
 };
 
 export default EmployeeHistory;

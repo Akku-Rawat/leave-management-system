@@ -1,7 +1,10 @@
 import nodemailer from "nodemailer";
+import { generateActionToken } from '../utils/generateToken.js';
 
 const transporter = nodemailer.createTransport({
-  service: "gmail", // or your SMTP provider
+  host: "smtp.hostinger.com", // or your SMTP provider
+  port:465,
+  secure:true,
   auth: {
     user: process.env.EMAIL_USER,
     pass: process.env.EMAIL_PASS,
@@ -9,8 +12,14 @@ const transporter = nodemailer.createTransport({
 });
 
 export const sendLeaveMail = async (leave, user) => {
-  const approveUrl = `${process.env.BASE_URL}/leave/approve/${leave.leave_id}`;
-  const rejectUrl = `${process.env.BASE_URL}/leave/reject/${leave.leave_id}`;
+ const approveToken = generateActionToken(leave.leave_id, 'approved');
+const rejectToken = generateActionToken(leave.leave_id, 'rejected');
+const messageToken = generateActionToken(leave.leave_id, 'message');
+
+const approveUrl = `${process.env.BASE_URL}/api/leaves/action?token=${approveToken}`;
+const rejectUrl = `${process.env.BASE_URL}/api/leaves/action?token=${rejectToken}`;
+
+const messageUrl = `${process.env.BASE_URL}/api/leaves/action?token=${messageToken}`;
 
   const mailOptions = {
     from: process.env.EMAIL_USER,
@@ -26,6 +35,7 @@ export const sendLeaveMail = async (leave, user) => {
       <br>
       <a href="${approveUrl}" style="padding:10px;background:green;color:white;text-decoration:none;">Approve</a>
       <a href="${rejectUrl}" style="padding:10px;background:red;color:white;text-decoration:none;">Reject</a>
+      <a href="${messageUrl} style="padding:10px;background:red;color:white;text-decoration:none,">Send Message</a>
     `,
   };
   await transporter.sendMail(mailOptions);

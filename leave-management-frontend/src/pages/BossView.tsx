@@ -74,27 +74,27 @@ const BossView: React.FC = () => {
   // Pagination logic
   const totalPages = Math.ceil(filteredRequests.length / recordsPerPage);
   const startIndex = (currentPage - 1) * recordsPerPage;
-  const currentRecords = filteredRequests.slice(startIndex, startIndex + recordsPerPage);
+  // const currentRecords = filteredRequests.slice(startIndex, startIndex + recordsPerPage);
 
   // Sorting (if you want to add sorting functionality)
   // ...
 
-  const handleExport = () => {
-    alert("Exporting filtered dashboard data...");
-  };
+  // const handleExport = () => {
+  //   alert("Exporting filtered dashboard data...");
+  // };
 
-  const getStatusColor = (status: string) => {
-    switch (status) {
-      case "Approved":
-        return "bg-green-100 text-green-800";
-      case "Rejected":
-        return "bg-red-100 text-red-800";
-      case "Pending":
-        return "bg-orange-100 text-orange-800";
-      default:
-        return "bg-gray-100 text-gray-800";
-    }
-  };
+  // const getStatusColor = (status: string) => {
+  //   switch (status) {
+  //     case "Approved":
+  //       return "bg-green-100 text-green-800";
+  //     case "Rejected":
+  //       return "bg-red-100 text-red-800";
+  //     case "Pending":
+  //       return "bg-orange-100 text-orange-800";
+  //     default:
+  //       return "bg-gray-100 text-gray-800";
+  //   }
+  // };
        const [teamLeavingNextWeek, setTeamLeavingNextWeek] = useState<number>(0);
   useEffect(() => {
     async function fetchTeamLeaves() {
@@ -109,18 +109,18 @@ const BossView: React.FC = () => {
     }
     fetchTeamLeaves();
   }, []);
-  const getStatusIcon = (status: string) => {
-    switch (status) {
-      case "Approved":
-        return <FaCheckCircle className="text-green-600" />;
-      case "Rejected":
-        return <FaTimesCircle className="text-red-600" />;
-      case "Pending":
-        return <FaClock className="text-orange-600" />;
-      default:
-        return null;
-    }
-  };
+  // const getStatusIcon = (status: string) => {
+  //   switch (status) {
+  //     case "Approved":
+  //       return <FaCheckCircle className="text-green-600" />;
+  //     case "Rejected":
+  //       return <FaTimesCircle className="text-red-600" />;
+  //     case "Pending":
+  //       return <FaClock className="text-orange-600" />;
+  //     default:
+  //       return null;
+  //   }
+  // };
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-50 via-blue-50 to-indigo-50 p-8">

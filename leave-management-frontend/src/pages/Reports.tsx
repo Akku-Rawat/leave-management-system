@@ -21,10 +21,10 @@ import "react-calendar/dist/Calendar.css";
 interface ReportsProps {}
 
 const Reports: React.FC<ReportsProps> = () => {
-  const [totalRequests, setTotalRequests] = useState<number>(0);
-  const [pendingRequests, setPendingRequests] = useState<number>(0);
-  const [approvedRequests, setApprovedRequests] = useState<number>(0);
-  const [totalLeaveDays, setTotalLeaveDays] = useState<number>(0);
+  const [, setTotalRequests] = useState<number>(0);
+  const [, setPendingRequests] = useState<number>(0);
+  const [, setApprovedRequests] = useState<number>(0);
+  const [, setTotalLeaveDays] = useState<number>(0);
   const [encashableLeaves, setEncashableLeaves] = useState<number>(5);
   const [rolloverEligible, setRolloverEligible] = useState<number>(3);
   const [holidays, setHolidays] = useState<Date[]>([]);

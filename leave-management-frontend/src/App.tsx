@@ -1,232 +1,210 @@
-import React, { useState } from "react";
+import React, { useState, useEffect, type JSX } from "react";
+import { Routes, Route, Navigate, useNavigate } from "react-router-dom";
+
 import Header from "./components/Header";
 import Sidebar from "./components/Sidebar";
-import NotificationScreen from "./components/Notification";
+
+import LoginPage from "./pages/loginpage";
 import LeaveRequest from "./pages/LeaveRequest";
 import History from "./pages/History";
-import LoginPage from "./pages/loginpage";
 import HRView from "./pages/HRView";
 import BossView from "./pages/BossView";
-import type { LeaveRequestType, LeaveRequestFormData, User } from "./Types";
-import Documentation from "./components/documentation";
 import EmployeeManagement from "./pages/EmployeeManagement";
+import Documentation from "./components/documentation";
 import Reports from "./pages/Reports";
-const App: React.FC = () => {
-  const [activeView, setActiveView] = useState("apply");
-  const [leaveRequests, setLeaveRequests] = useState<LeaveRequestType[]>([]);
-  const [, setNotification] = useState<{
-    title: string;
-    message: string;
-    type: "success" | "error" | "warning";
-  } | null>(null);
-  const [submitSuccess, setSubmitSuccess] = useState(false);
-  const [currentUser, setCurrentUser] = useState<User | null>(null);
+import Profile from "./components/profile";
 
-  // Sample requests for HR/Boss testing
-  const sampleRequests: LeaveRequestType[] = [
-    {
-      id: "1",
-      employeeName: "Jane Smith",
-      department: "Engineering",
-      type: "Annual Leave",
-      status: "Pending",
-      startDate: "2025-08-30",
-      endDate: "2025-09-02",
-      days: 4,
-      reason: "Family vacation to Goa",
-      date: "2025-08-25",
-      userId: "sample-user-1",
-      employeeId: "sample-emp-1"
-    },
-    {
-      id: "2", 
-      employeeName: "Bob Wilson",
-      department: "Finance",
-      type: "Sick Leave",
-      status: "Pending",
-      startDate: "2025-08-26",
-      endDate: "2025-08-27",
-      days: 2,
-      reason: "Medical appointment and recovery",
-      date: "2025-08-24",
-      userId: "sample-user-2",
-      employeeId: "sample-emp-2"
-    },
-    {
-      id: "3",
-      employeeName: "Alice Johnson", 
-      department: "Marketing",
-      type: "Emergency Leave",
-      status: "Approved",
-      startDate: "2025-08-20",
-      endDate: "2025-08-22",
-      days: 3,
-      reason: "Family emergency",
-      date: "2025-08-19",
-      userId: "sample-user-3",
-      employeeId: "sample-emp-3"
-    },
-  ];
+import type { User, LeaveRequestType, LeaveRequestFormData } from "./Types";
+
+const App: React.FC = () => {
+  const navigate = useNavigate();
+
+  const [currentUser, setCurrentUser] = useState<User | null>(null);
+  const [leaveRequests, setLeaveRequests] = useState<LeaveRequestType[]>([]);
+  const [, setSubmitSuccess] = useState(false);
+  const [loading, setLoading] = useState(true);
+  const [, setActiveView] = React.useState<string>(""); 
+
+  useEffect(() => {
+    const savedUser = localStorage.getItem("currentUser");
+    if (savedUser) {
+      setCurrentUser(JSON.parse(savedUser));
+    }
+    setLoading(false);
+  }, []);
+
+  if (loading) {
+    return <div>Loading...</div>;
+  }
 
   const handleLogin = (user: User) => {
-    setCurrentUser(user);
-    if (user.role === "boss") {
-      setActiveView("boss-dashboard");
-    } else if (user.role === "hr") {
-      setActiveView("dashboard");  
-    } else {
-      setActiveView("apply");
-    }
+    const roleName =
+      typeof user.role === "string" ? user.role : user.role.role_name;
+
+    const normalizedUser = {
+      ...user,
+      id: String(user.user_id ?? user.id ?? ""),
+      role: { role_name: roleName },
+    };
+
+    setCurrentUser(normalizedUser);
+    localStorage.setItem("currentUser", JSON.stringify(normalizedUser));
+
+    if (roleName === "boss") navigate("/boss-dashboard");
+    else if (roleName === "hr") navigate("/dashboard");
+    else navigate("/apply");
   };
 
   const handleLogout = () => {
     setCurrentUser(null);
-    setActiveView("apply");
     setSubmitSuccess(false);
-  };
-
-  const handleChangeView = (view: string) => {
-    setActiveView(view);
+    localStorage.removeItem("currentUser");
+    navigate("/login");
   };
 
   const addLeaveRequest = (data: LeaveRequestFormData) => {
     const start = new Date(data.startDate);
     const end = new Date(data.endDate);
     let days = (end.getTime() - start.getTime()) / (1000 * 3600 * 24) + 1;
-    if (data.duration === "half") days = 0.5;
+    if (data.duration === "first" || data.duration === "second") days = 0.5;
 
     const newRequest: LeaveRequestType = {
       id: (leaveRequests.length + 1).toString(),
-      employeeName: currentUser?.name || "User",
+      employeeName: currentUser?.name || "",
       department: currentUser?.department || "",
       date: new Date().toISOString().split("T")[0],
-      status: "Pending",
+      status: "pending",
+      leave_id: "",
       type: data.type,
-      startDate: data.startDate,
-      endDate: data.endDate,
+      start_date: data.startDate,
+      end_date: data.endDate,
       days,
+      created_at: new Date().toISOString(),
       reason: data.reason,
       userId: currentUser?.id || "",
       employeeId: currentUser?.id || "",
+      user: {
+        user_id: currentUser?.id || "",
+        name: currentUser?.name || "",
+        email: currentUser?.email || "",
+      },
     };
 
     setLeaveRequests((prev) => [newRequest, ...prev]);
-    setNotification({
-      title: "Success",
-      message: "Leave request submitted successfully!",
-      type: "success",
-    });
     setSubmitSuccess(true);
+    navigate("/apply");
   };
 
-  const goToHistory = () => {
-    setSubmitSuccess(false);
-    setActiveView("history");
+  const RequireAuth: React.FC<{ children: JSX.Element }> = ({ children }) => {
+    if (!currentUser) return <Navigate to="/login" replace />;
+    return children;
   };
 
-  const goBack = () => {
-    setSubmitSuccess(false);
-    if (currentUser?.role === "boss") {
-      setActiveView("boss-dashboard");
-    } else if (currentUser?.role === "hr") {
-      setActiveView("dashboard");
-    } else {
-      setActiveView("apply");
-    }
-  };
+  const roleName =
+    currentUser &&
+    (typeof currentUser.role === "string"
+      ? currentUser.role
+      : currentUser.role.role_name);
 
-  // Show login if no user
-  if (!currentUser) {
-    return <LoginPage onLogin={handleLogin} />;
-  }
+  if (!currentUser) return <LoginPage onLogin={handleLogin} />;
 
   return (
-    <div className="flex flex-col h-screen bg-gray-50">
-      {/* Header */}
-      <Header currentUser={currentUser} onLogout={handleLogout} />
-
-      <div className="flex flex-1 overflow-hidden">
-        {/* Sidebar */}
-        <Sidebar 
-          activeView={activeView} 
-          onChangeView={handleChangeView}
+    <>
+      <Header
+        currentUser={currentUser}
+        onLogout={handleLogout}
+        onNavigate={navigate}
+      />
+      <div className="flex">
+        <Sidebar
+          activeView={window.location.pathname.replace("/", "") || "apply"}
+          onChangeView={(view) => navigate(`/${view}`)}
           userRole={currentUser.role}
+          currentUserName={currentUser.name}
+          onLogout={handleLogout}
         />
-
-        {/* Main Content */}
-        <main className="flex-1 overflow-auto">
-          {/* Apply Leave / Dashboard Views */}
-          {(activeView === "apply" || activeView === "dashboard" || activeView === "boss-dashboard") && (
-            <>
-              {submitSuccess ? (
-                <NotificationScreen
-                  onGoBack={goBack}
-                  onGoToHistory={goToHistory}
-                />
-              ) : (
-                <>
-                  {/* Employee Apply */}
-                  {currentUser.role === "employee" && activeView === "apply" && (
-                    <LeaveRequest
-                      onSubmit={addLeaveRequest}
-                      setActiveView={setActiveView}
-                      userRole={currentUser.role}
-                      userName={currentUser.name}
-                      allRequests={[...sampleRequests, ...leaveRequests]}
-                    />
-                  )}
-
-                  {/* HR View */}
-                  {currentUser.role === "hr" && activeView === "dashboard" && (
-                    <HRView />
-                  )}
-
-                  {/* HR can also Apply */}
-                  {currentUser.role === "hr" && activeView === "apply" && (
-                    <LeaveRequest
-                      onSubmit={addLeaveRequest}
-                      setActiveView={setActiveView}
-                      userRole={currentUser.role}
-                      userName={currentUser.name}
-                      allRequests={[...sampleRequests, ...leaveRequests]}
-                    />
-                  )}
-
-                  {/* Boss View */}
-                  {currentUser.role === "boss" && activeView === "boss-dashboard" && (
-                    <BossView />
-                  )}
-                </>
-              )}
-            </>
-          )}
-
-          {/* History View */}
-          {activeView === "history" && (
-            <History 
-              leaveRequests={[...sampleRequests, ...leaveRequests]} 
-              setActiveView={setActiveView}
-              currentUserId={currentUser.id}
-              userRole={currentUser.role}
-            />
-          )}
-
-         {activeView === "employees" && currentUser?.role === "boss" && (
-  <EmployeeManagement />
-)}
-
-
-          {activeView === "reports" && currentUser.role === 'boss' && (
-  <Reports />
-          )}
+        <main className="flex-1 p-4 bg-gray-50 overflow-auto">
           
-{activeView === "documentation" && (
-  <Documentation userRole={currentUser.role} />
-)}
-
+         <Routes>
+            <Route
+              path="/apply"
+              element={<LeaveRequest onSubmit={addLeaveRequest}
+               currentUser={currentUser}  
+               userName={currentUser.name}        // add karo
+               department={currentUser.department} // add karo
+               role={currentUser.role}            // add karo
+               setActiveView={setActiveView}     // add karo, jo aapke component me ho
+               allRequests={leaveRequests}  />}
+            />
+            <Route
+              path="/history"
+              element={
+                <History
+                
+                  leaveRequests={leaveRequests}
+                  currentUserId={currentUser.id}
+                 userRole={roleName || "employee"}
+                 onGoBack={() => {}}
+                />
+              }
+            />
+            <Route
+              path="/dashboard"
+              element={
+                <RequireAuth>
+                  {roleName === "hr" ? <HRView /> : <Navigate to="/apply" replace />}
+                </RequireAuth>
+              }
+            />
+            <Route
+              path="/profile"
+              element={
+                <RequireAuth>
+                  <Profile currentUser={currentUser} />
+                </RequireAuth>
+              }
+            />
+            <Route
+              path="/boss-dashboard"
+              element={
+                <RequireAuth>
+                  {roleName === "boss" ? <BossView /> : <Navigate to="/apply" replace />}
+                </RequireAuth>
+              }
+            />
+            <Route
+              path="/employees"
+              element={
+                <RequireAuth>
+                  {roleName === "boss" ? <EmployeeManagement /> : <Navigate to="/apply" replace />}
+                </RequireAuth>
+              }
+            />
+            <Route
+              path="/reports"
+              element={
+                <RequireAuth>
+                  {roleName === "boss" ? <Reports /> : <Navigate to="/apply" replace />}
+                </RequireAuth>
+              }
+            />
+            <Route
+              path="/documentation"
+              element={
+                <RequireAuth>
+                  {(roleName === "boss" || roleName === "hr"||roleName==="employee") ? (
+                    <Documentation userRole={roleName} />
+                  ) : (
+                    <Navigate to="/apply" replace />
+                  )}
+                </RequireAuth>
+              }
+            />
+            <Route path="*" element={<Navigate to="/apply" replace />} />
+          </Routes>
         </main>
       </div>
-    </div>
+    </>
   );
 };
 

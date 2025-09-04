@@ -26,14 +26,9 @@ CREATE TABLE `LeaveRequest` (
     `user_id` INTEGER NOT NULL,
     `start_date` DATETIME(3) NOT NULL,
     `end_date` DATETIME(3) NOT NULL,
-    `reason` VARCHAR(191) NULL,
+    `type` VARCHAR(191) NOT NULL,
+    `reason` VARCHAR(15000) NULL,
     `status` ENUM('pending', 'approved', 'rejected', 'partial') NOT NULL DEFAULT 'pending',
-    `hr_action` ENUM('pending', 'approved', 'rejected', 'partial') NOT NULL DEFAULT 'pending',
-    `boss_action` ENUM('pending', 'approved', 'rejected', 'partial') NOT NULL DEFAULT 'pending',
-    `applied_at` DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3),
-    `type` VARCHAR(191) NULL,
-    `duration` INTEGER NULL,
-    `emergencyContact` VARCHAR(191) NULL,
 
     PRIMARY KEY (`leave_id`)
 ) DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;

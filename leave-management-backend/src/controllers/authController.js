@@ -3,31 +3,32 @@ import jwt from 'jsonwebtoken'
 
 export async function login(req, res) {
   try {
-    const { email, password } = req.body
+    const { email, password } = req.body;
     if (!email || !password) {
-      return res.status(400).json({ error: 'Email and password required' })
+      return res.status(400).json({ error: 'Email and password required' });
     }
 
-    const user = await loginUser(email, password)
+    const user = await loginUser(email, password);
+    console.log("User with role included:", user);
 
-    // Generate token signed with secret and expiration
+    // JWT token generate karo correct role_id ke saath
     const token = jwt.sign(
       {
         user_id: user.user_id,
         email: user.email,
-        role_id: user.role_id,
+        role_id: user.role?.role_id,
       },
       process.env.JWT_SECRET,
       {
         expiresIn: '1h', // token valid for 1 hour
       }
-    )
+    );
 
     res.json({
       token,
-      user, // return user info (without password_hash)
-    })
+      user,
+    });
   } catch (error) {
-    res.status(401).json({ error: error.message })
+    res.status(401).json({ error: error.message });
   }
 }
