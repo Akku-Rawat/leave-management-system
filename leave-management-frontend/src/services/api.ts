@@ -191,3 +191,79 @@ export async function getTeamNextWeekLeaves(token?: string) {
   if (!res.ok) throw new Error("Failed to fetch team leaves");
   return res.json();
 }
+
+export async function getUserInfo(token?: string) {
+  const res = await fetch(`${API_URL}/user/me`, {
+    headers: {
+      "Accept": "application/json",
+      ...(token ? { Authorization: `Bearer ${token}` } : {}),
+    },
+  });
+  if (!res.ok) throw new Error("Failed to fetch user info");
+  return res.json();
+}
+
+// Get all users (for admin)
+export async function getUserList(token?: string) {
+  const res = await fetch(`${API_URL}/user`, {
+    headers: {
+      "Content-Type": "application/json",
+      ...(token ? { Authorization: `Bearer ${token}` } : {}),
+    },
+  });
+  if (!res.ok) throw new Error("Failed to fetch users");
+  return res.json();
+}
+
+// Notifications functions
+export async function getNotificationsType1(token?: string) {
+  const res = await fetch(`${API_URL}/notifications/type1`, {
+    headers: token ? { Authorization: `Bearer ${token}` } : {},
+  });
+  if (!res.ok) throw new Error("Failed to fetch type1 notifications");
+  return res.json();
+}
+
+export async function getNotificationsType2(token?: string) {
+  const res = await fetch(`${API_URL}/notifications/type2`, {
+    headers: token ? { Authorization: `Bearer ${token}` } : {},
+  });
+  if (!res.ok) throw new Error("Failed to fetch type2 notifications");
+  return res.json();
+}
+
+export async function getNotificationsType3(token?: string) {
+  const res = await fetch(`${API_URL}/notifications/type3`, {
+    headers: token ? { Authorization: `Bearer ${token}` } : {},
+  });
+  if (!res.ok) throw new Error("Failed to fetch type3 notifications");
+  return res.json();
+}
+export async function markNotificationAsRead(notificationId: number, token?: string) {
+  const res = await fetch(`${API_URL}/notifications/${notificationId}/read`, {
+    method: "PATCH",
+    headers: {
+      "Content-Type": "application/json",
+      ...(token ? { Authorization: `Bearer ${token}` } : {}),
+    },
+  });
+  if (!res.ok) throw new Error("Failed to mark notification as read");
+  return res.json();
+}
+
+
+export async function encashLeaves(
+  action: "carry_forward" | "cash_encash",
+  token?: string
+) {
+  const res = await fetch(`${API_URL}/leaves/encashment`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      ...(token ? { Authorization: `Bearer ${token}` } : {}),
+    },
+    body: JSON.stringify({ action }),
+  });
+  if (!res.ok) throw new Error("Failed to submit encashment");
+  return res.json();
+}

@@ -64,8 +64,6 @@ export const updateLeaveStatus = async (leave_id, status) => {
     });
 
     if (normalizedStatus === "approved" || normalizedStatus === "rejected") {
-      // Update used leaves only if status is approved or rejected
-      // Used = count of approved leaves only
       const leaveCount = await prisma.leaveRequest.count({
         where: { user_id: leave.user_id, status: "approved" },
       });
@@ -86,7 +84,7 @@ export const updateLeaveStatus = async (leave_id, status) => {
   }
 };
 
-// Withdraw leave request (only if pending)
+// Withdraw leave request
 export const withdrawLeave = async (leave_id) => {
   try {
     const leave = await prisma.leaveRequest.findUnique({
@@ -106,5 +104,36 @@ export const withdrawLeave = async (leave_id) => {
     return updatedLeave;
   } catch (err) {
     throw err;
+  }
+};
+
+
+export const getRemainingLeaveBalance = async (userId) => {
+  const balance = await prisma.leaveBalance.findFirst({
+    where: { user_id: userId },
+  });
+  if (!balance) throw new Error("Leave balance not found");
+
+  const remaining = balance.total_leaves - balance.used_leaves;
+  return {
+    totalLeaves: balance.total_leaves,
+    usedLeaves: balance.used_leaves,
+    remainingLeaves: remaining,
+  };
+};
+
+export const processLeaveEncashment = async (userId, action) => {
+
+
+  if (action === "cash_encash") {
+    await prisma.leaveBalance.update({
+      where: { user_id: userId },
+      data: {
+        used_leaves: { increment: (await getRemainingLeaveBalance(userId)).remainingLeaves },
+      },
+    });
+    return { message: "Leaves encashed successfully" };
+  } else if (action === "carry_forward") {
+    return { message: "Leaves carried forward successfully" };
   }
 };

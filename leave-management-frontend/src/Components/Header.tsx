@@ -2,6 +2,15 @@ import React, { useState, useEffect } from "react";
 import { createPortal } from "react-dom";
 import type { User } from "../Types";
 import { FaCog, FaBell, FaUserCircle } from "react-icons/fa";
+import {
+  getUserInfo,
+  getUserList,
+  getNotificationsType1,
+  getNotificationsType2,
+  getNotificationsType3,
+  markNotificationAsRead
+} from "../services/api";
+
 
 
 export interface HeaderProps {
@@ -84,148 +93,98 @@ const [, setUserList] = useState<User[]>([]);
   const profileRef = React.useRef<HTMLButtonElement | null>(null);
 
   // Fetch combined notifications from three different backend endpoints
-  useEffect(() => {
-   async function fetchAllNotifications() {
-  try {
-    const token = localStorage.getItem("token");
+useEffect(() => {
+    async function fetchAllNotifications() {
+      try {
+        const token = localStorage.getItem("token");
+        
+        // Use API functions instead of direct fetch
+        const [data1, data2, data3] = await Promise.all([
+          getNotificationsType1(token || undefined),
+          getNotificationsType2(token || undefined),
+          getNotificationsType3(token || undefined),
+        ]);
 
-    const [res1, res2, res3] = await Promise.all([
-      fetch("/api/notifications/type1", {
-        credentials: "include",
-        headers: { ...(token ? { Authorization: `Bearer ${token}` } : {}) },
-      }),
-      fetch("/api/notifications/type2", {
-        credentials: "include",
-        headers: { ...(token ? { Authorization: `Bearer ${token}` } : {}) },
-      }),
-      fetch("/api/notifications/type3", {
-        credentials: "include",
-        headers: { ...(token ? { Authorization: `Bearer ${token}` } : {}) },
-      }),
-    ]);
-
-    if (!res1.ok || !res2.ok || !res3.ok) {
-      console.error(
-        "Failed to fetch notifications:",
-        res1.status,
-        res2.status,
-        res3.status
-      );
-      setNotifications([]);
-      return;
+        const combined = [...data1, ...data2, ...data3];
+        combined.sort((a, b) => (a.time < b.time ? 1 : -1));
+        setNotifications(combined);
+      } catch (error) {
+        console.error("Error fetching notifications:", error);
+        setNotifications([]);
+      }
     }
 
-    const [data1, data2, data3] = await Promise.all([
-      res1.json(),
-      res2.json(),
-      res3.json(),
-    ]);
-
-    const combined = [...data1, ...data2, ...data3];
-    combined.sort((a, b) => (a.time < b.time ? 1 : -1));
-
-    setNotifications(combined);
-  } catch (error) {
-    console.error("Error fetching notifications:", error);
-    setNotifications([]);
-  }
-}
-fetchAllNotifications();
-
+    fetchAllNotifications();
   }, []);
+
 
   // Fetch full user info for profile dropdown
-  useEffect(() => {
+   useEffect(() => {
     async function fetchUserInfo() {
+      try {
+        const token = localStorage.getItem("token");
+        const data: User = await getUserInfo(token || undefined);
+        setUserInfo(data);
+      } catch (error) {
+        console.error("Failed to fetch user info:", error);
+      }
+    }
+
+    fetchUserInfo();
+  }, []);
+const handleSettingsAction = async (action: string) => {
+    setShowSettings(false);
+    setSettingsLoading(action);
     try {
       const token = localStorage.getItem("token");
-      const res = await fetch("/api/user/me", {
-        headers: {
-          Accept: "application/json",
-          ...(token ? { Authorization: `Bearer ${token}` } : {}),
-        },
-        credentials: "include",
-      });
-
-      if (res.ok) {
-        const data: User = await res.json();
-        setUserInfo(data);
+      
+      switch (action) {
+        case "addUser":
+          onNavigate?.("/admin/user/add");
+          break;
+        case "users":
+          // Use API function instead of direct fetch
+          const dataUsers: User[] = await getUserList(token || undefined);
+          setUserList(dataUsers);
+          onNavigate?.("/admin/users");
+          break;
+        case "policies":
+          onNavigate?.("/admin/leave-policies");
+          break;
+        case "analytics":
+          onNavigate?.("/admin/analytics");
+          break;
+        case "delegation":
+          onNavigate?.("/admin/delegation");
+          break;
+        case "config":
+          onNavigate?.("/admin/config");
+          break;
+        case "changePassword":
+          onNavigate?.("/change-password");
+          break;
+        default:
+          console.warn(`Unknown settings action: ${action}`);
+          break;
       }
     } catch (error) {
-      console.error("Failed to fetch user info:", error);
-    }
-  }
-  fetchUserInfo();
-  }, []);
-
-const handleSettingsAction = async (action: string) => {
-  setShowSettings(false);
-  setSettingsLoading(action);
-
-  try {
-    switch (action) {
-      case "addUser":
-        onNavigate?.("/admin/user/add");
-        break;
-
-      case "users":
-        // Fetch user list from backend API
-        const resUsers = await fetch("/api/user", {
-          headers: { "Content-Type": "application/json" },
-          credentials: "include",
-        });
-        if (!resUsers.ok) throw new Error("Failed to fetch users");
-        const dataUsers: User[] = await resUsers.json();
-        setUserList(dataUsers);
-        // optionally navigate to user management page if needed
-        onNavigate?.("/admin/users");
-        break;
-
-      // other cases remain same
-      case "policies":
-        onNavigate?.("/admin/leave-policies");
-        break;
-      case "analytics":
-        onNavigate?.("/admin/analytics");
-        break;
-      case "delegation":
-        onNavigate?.("/admin/delegation");
-        break;
-      case "config":
-        onNavigate?.("/admin/config");
-        break;
-      case "changePassword":
-        onNavigate?.("/change-password");
-        break;
-      default:
-        console.warn(`Unknown settings action: ${action}`);
-        break;
-    }
-  } catch (error) {
-    console.error(`Error handling ${action}:`, error);
-  } finally {
-    setSettingsLoading(null);
-  }
-};
-
-  // Mark notification as read by calling backend and updating UI
-  const markNotificationAsRead = async (notificationId: number) => {
-    try {
-      const res = await fetch(`/api/notifications/${notificationId}/read`, {
-        method: "PATCH",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        credentials: "include",
-      });
-
-      if (res.ok) {
-        setNotifications((prev) => prev.filter((notif) => notif.id !== notificationId));
-      }
-    } catch (error) {
-      console.error("Error marking notification as read:", error);
+      console.error(`Error handling ${action}:`, error);
+    } finally {
+      setSettingsLoading(null);
     }
   };
+
+
+//   // Mark notification as read by calling backend and updating UI
+//  const markNotificationAsReadHandler = async (notificationId: number) => {
+//     try {
+//       const token = localStorage.getItem("token");
+//       await markNotificationAsRead(notificationId, token || undefined);
+//       setNotifications((prev) => prev.filter((notif) => notif.id !== notificationId));
+//     } catch (error) {
+//       console.error("Error marking notification as read:", error);
+//     }
+//   };
 
   const notificationIconSize = 25;
   const iconSize = 30;

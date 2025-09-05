@@ -11,7 +11,8 @@ import NotificationScreen from "../components/Notification";
 import EncashmentModal from "./EncashmentModal";
 
 import { useNavigate } from "react-router-dom";
-import { getMyLeaves, getStats, createLeave } from "../services/api";
+import { getMyLeaves, getStats, createLeave, encashLeaves } from "../services/api";
+
 
 
 
@@ -83,6 +84,22 @@ useEffect(() => {
   }
   fetchData();
 }, []);
+const handleEncash = async (action: "carry_forward" | "cash_encash") => {
+  try {
+    const token = localStorage.getItem("token") ?? undefined;
+    await encashLeaves(action, token);
+    setShowEncashModal(false);
+    // refetch stats/leaves to reflect changes
+    const stats = await getStats(token);
+    setUserData(stats);
+    const currentLeaves = await getMyLeaves(token);
+    setLeaves(currentLeaves);
+    alert("Encashment successful");
+  } catch (e: any) {
+    console.error(e);
+    alert(`Encashment failed: ${e.response?.data?.error || e.message}`);
+  }
+};
 
   const handleRangeSelect = (range: { from?: Date; to?: Date } | undefined) => {
     if (!range) return;
@@ -292,7 +309,7 @@ const handleSubmit = async (e: React.FormEvent) => {
                       className="w-full border rounded-xl p-3 bg-slate-50"
                       disabled={loading}
                     />
-                    <EncashmentModal visible={showEncashModal} onClose={() => setShowEncashModal(false)} availableLeaves={remainingLeaves} />
+                    
                   </div>
                   <textarea
                     id="reason"
@@ -333,7 +350,12 @@ const handleSubmit = async (e: React.FormEvent) => {
         </div>
       </div>
 
-      <EncashmentModal visible={showEncashModal} onClose={() => setShowEncashModal(false)} availableLeaves={remainingLeaves} />
+    <EncashmentModal
+  visible={showEncashModal}
+  onClose={() => setShowEncashModal(false)}
+  availableLeaves={remainingLeaves}
+  onConfirm={() => handleEncash("cash_encash")}
+/>
     </div>
   );
 };

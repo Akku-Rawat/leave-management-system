@@ -228,16 +228,20 @@ const History: React.FC<HistoryProps> = ({
     setTimeout(() => setShowNotification(null), 2000);
   };
 
-   const handleWithdraw = async (r: LeaveRequestType) => {
-    try {
-      await withdrawLeave(r.id);
-      setShowNotification(`${r.type} withdrawn`);
-      setTimeout(() => setShowNotification(null), 2000);
-      setLeaveRequests((prev) => prev.filter((req) => req.id !== r.id));
-    } catch (error) {
-      alert("Failed to withdraw request");
-    }
-  };
+  const handleWithdraw = async (r: LeaveRequestType) => {
+  try {
+    const token = localStorage.getItem("token") || undefined;
+    await withdrawLeave(r.id, token); // ✅ Token added
+    setShowNotification(`${r.type} withdrawn`);
+    setTimeout(() => setShowNotification(null), 2000);
+    // Refresh data after withdrawal
+    window.location.reload(); // or call fetchLeaveRequests again
+  } catch (error) {
+    console.error("Withdraw error:", error);
+    alert("Failed to withdraw request");
+  }
+};
+
 
   // Using navigate from react-router-dom instead of setActiveView
   const handleDuplicate = (r: LeaveRequestType) => {

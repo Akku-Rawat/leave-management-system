@@ -1,7 +1,7 @@
 import { applyLeave, updateLeaveStatus } from "../services/leaveService.js";
 import prisma from "../../prisma/client.js";
 import jwt from 'jsonwebtoken';
-import { withdrawLeave } from '../services/leaveService.js';
+import { withdrawLeave ,getRemainingLeaveBalance,processLeaveEncashment } from '../services/leaveService.js';
 
 // Leave Request Create करना
 export const createLeave = async (req, res) => {
@@ -238,5 +238,30 @@ export const sendCustomLeaveMessage = async (req, res) => {
 
   } catch (error) {
     return res.status(500).json({ error: error.message });
+  }
+};
+
+
+export const getRemainingLeaves = async (req, res) => {
+  try {
+    const userId = req.user.user_id;
+    const remainingLeaves = await getRemainingLeaveBalance(userId);
+    res.json(remainingLeaves);
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+};
+
+export const submitEncashment = async (req, res) => {
+  try {
+    const userId = req.user.user_id;
+    const { action } = req.body; // action: "carry_forward" or "cash_encash"
+    if (!["carry_forward", "cash_encash"].includes(action)) {
+      return res.status(400).json({ error: "Invalid action" });
+    }
+    const result = await processLeaveEncashment(userId, action);
+    res.json(result);
+  } catch (error) {
+    res.status(500).json({ error: error.message });
   }
 };
