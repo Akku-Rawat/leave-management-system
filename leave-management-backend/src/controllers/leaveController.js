@@ -66,11 +66,12 @@ export const getUserStats = async (req, res) => {
 
     // Response me numbers bhejo zero fallback ke sath
     res.json({
-      totalLeaves: totalLeaves || 0,
-      usedLeaves: usedLeaves || 0,
-      pendingLeaves: pendingLeaves || 0,
-      remainingLeaves: remainingLeaves || 0,
-    });
+  totalLeaves: totalLeaves || 0,
+  usedLeaves: usedLeaves || 0,
+  pendingLeaves: pendingLeaves || 0,
+  remainingLeaves: remainingLeaves > 0 ? remainingLeaves : 0,
+});
+
   } catch (error) {
     res.status(500).json({ error: error.message });
   }
