@@ -33,11 +33,11 @@ async function main() {
     { name: 'Dixant', email: 'dixant@rolaface.com', password: 'dixant', role: employeeRole },
     { name: 'Shivangi', email: 'shivangi@rolaface.com', password: 'shivangi', role: employeeRole },
     { name: 'Rahul', email: 'rahul@rolaface.com', password: 'rahul', role: employeeRole },
-    { name: 'Bhattsir', email: 'bhattsir@rolaface.com', password: 'bhattsir', role: hrRole },
+    { name: 'Hemwant', email: 'hemwant@rolaface.com', password: 'hemwant', role: hrRole },
     { name: 'Madhav', email: 'madhav@rolaface.com', password: 'madhav', role: employeeRole },
     { name: 'Rishab', email: 'rishab@rolaface.com', password: 'rishab', role: employeeRole },
     { name: 'Manish', email: 'manish@rolaface.com', password: 'manish', role: employeeRole },
-    { name: 'Vinodsir', email: 'vinodsir@rolaface.com', password: 'vinodsir', role: bossRole },
+    { name: 'Admin', email: 'admin@rolaface.com', password: 'admin', role: bossRole },
   ];
 
   // Users aur unke leaveBalance insert/ update karo
