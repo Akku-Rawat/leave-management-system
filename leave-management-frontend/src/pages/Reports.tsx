@@ -17,6 +17,7 @@ import {
 import { Dialog } from "@headlessui/react";
 import Calendar from "react-calendar";
 import "react-calendar/dist/Calendar.css";
+import { getReportSummary, getHolidays } from "../services/api";
 
 interface ReportsProps {}
 
@@ -40,10 +41,9 @@ const Reports: React.FC<ReportsProps> = () => {
   useEffect(() => {
     async function fetchData() {
       try {
-        const resReport = await fetch("/api/reports/summary");
-        if (!resReport.ok) throw new Error("Failed to fetch report summary");
-        const reportData = await resReport.json();
+        const token = localStorage.getItem("token") || undefined;
 
+        const reportData = await getReportSummary(token); // ✅ use api.ts
         setTotalRequests(reportData.totalRequests);
         setPendingRequests(reportData.pendingRequests);
         setApprovedRequests(reportData.approvedRequests);
@@ -52,11 +52,8 @@ const Reports: React.FC<ReportsProps> = () => {
         setRolloverEligible(reportData.rolloverEligible);
         setRemainingLeaves(reportData.remainingLeaves ?? 0);
 
-        const resHolidays = await fetch("/api/holidays");
-        if (!resHolidays.ok) throw new Error("Failed to fetch holidays");
-        const holidaysData = await resHolidays.json();
+        const holidaysData = await getHolidays(token); // ✅ use api.ts
         setHolidays(holidaysData.map((d: string) => new Date(d)));
-
       } catch (error) {
         console.error("Error loading data:", error);
       }
@@ -67,7 +64,7 @@ const Reports: React.FC<ReportsProps> = () => {
   const handleReportGeneration = async (type: string) => {
     setActiveReport(type);
     setIsGenerating(true);
-    await new Promise(r => setTimeout(r, 2000));
+    await new Promise((r) => setTimeout(r, 2000));
     setIsGenerating(false);
   };
 

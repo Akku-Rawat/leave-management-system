@@ -7,6 +7,8 @@ import {
 } from "react-icons/fa";
 
 import "react-calendar/dist/Calendar.css";
+import {
+  getEmployees, getDelegations,addDelegationReq,updateDelegationReq} from "../services/api"; 
 
 interface LeaveRecord {
   from: string;
@@ -83,15 +85,13 @@ const EmployeeManagement: React.FC = () => {
   useEffect(() => {
     async function fetchData() {
       try {
-        const empRes = await fetch("/api/employees");
-        if (!empRes.ok) throw new Error("Failed to fetch employees");
-        const empData: Employee[] = await empRes.json();
+        const token = localStorage.getItem("token") || undefined;
+
+        const empData: Employee[] = await getEmployees(token); // ✅
         setEmployees(empData);
         setFilteredEmployees(empData);
 
-        const delRes = await fetch("/api/delegations");
-        if (!delRes.ok) throw new Error("Failed to fetch delegations");
-        const delData: Delegation[] = await delRes.json();
+        const delData: Delegation[] = await getDelegations(token); // ✅
         setDelegations(delData);
       } catch (error) {
         console.error(error);
@@ -152,29 +152,33 @@ const EmployeeManagement: React.FC = () => {
     exportToCsvHelper("all_employees.csv", data);
   };
 
-  const addDelegation = () => {
+  const addDelegation = async () => {
     if (!selectedEmployee || !delegateTo) {
       alert("Please select both employee and delegatee");
       return;
     }
-    const newDel: Delegation = {
-      id: `D${delegations.length + 1}`,
-      employeeName: selectedEmployee,
-      delegatedTo: delegateTo,
-      status: "Pending",
-      date: new Date().toISOString().slice(0, 10),
-    };
-    setDelegations((prev) => [...prev, newDel]);
-    setSelectedEmployee("");
-    setDelegateTo("");
+    try {
+      const token = localStorage.getItem("token") || undefined;
+      const newDel = await addDelegationReq(selectedEmployee, delegateTo, token); // ✅ backend call
+      setDelegations((prev) => [...prev, newDel]);
+      setSelectedEmployee("");
+      setDelegateTo("");
+    } catch (error) {
+      console.error(error);
+    }
   };
 
-  const updateDelegationStatus = (id: string, status: "Approved" | "Rejected") => {
-    setDelegations((prev) =>
-      prev.map((del) => (del.id === id ? { ...del, status } : del))
-    );
+  const updateDelegationStatus = async (id: string, status: "Approved" | "Rejected") => {
+    try {
+      const token = localStorage.getItem("token") || undefined;
+      const updated = await updateDelegationReq(id, status, token); // ✅ backend call
+      setDelegations((prev) =>
+        prev.map((del) => (del.id === id ? updated : del))
+      );
+    } catch (error) {
+      console.error(error);
+    }
   };
-
   return (
     <div className="p-8 max-w-7xl mx-auto">
       <h1 className="text-3xl font-bold mb-8">Employee Management Dashboard</h1>

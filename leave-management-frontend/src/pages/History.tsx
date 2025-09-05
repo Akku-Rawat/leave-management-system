@@ -1,6 +1,7 @@
 import React, { useState, useMemo, useEffect } from "react";
 import type { LeaveRequestType, User } from "../Types";
 import { FaUserGroup } from "react-icons/fa6";
+import { getMyLeaves, getAllLeaves, withdrawLeave } from "../services/api";
 import {
   FaCheckCircle,
   FaTimesCircle,
@@ -42,45 +43,19 @@ const History: React.FC<HistoryProps> = ({
   const [showAll, setShowAll] = useState(false);
 
   // Fetch data from API
-  useEffect(() => {
+    useEffect(() => {
     async function fetchLeaveRequests() {
       try {
-        console.log("History component mounted, fetching leave requests");
-        let apiEndpoint = "";
+        const token = localStorage.getItem("token") || undefined;
 
+        let data;
         if (userRole === "employee") {
-          apiEndpoint = `/api/leaves/my`;
+          data = await getMyLeaves(token);
         } else if (userRole === "hr") {
-          if (viewMode === "personal") {
-            apiEndpoint = `/api/leaves/my`;
-          } else {
-            apiEndpoint = `/api/leaves/history/all`;
-          }
+          data = viewMode === "personal" ? await getMyLeaves(token) : await getAllLeaves(token);
         } else if (userRole === "boss") {
-          apiEndpoint = `/api/leaves/history/all`;
+          data = await getAllLeaves(token);
         }
-
-        const token = localStorage.getItem("token");
-
-        const response = await fetch(apiEndpoint, {
-          headers: {
-            Accept: "application/json",
-            ...(token ? { Authorization: `Bearer ${token}` } : {})
-          }
-        });
-
-        const contentType = response.headers.get("content-type");
-        if (!contentType || !contentType.includes("application/json")) {
-          console.error("Backend returned non-JSON response:", await response.text());
-          return;
-        }
-
-        if (!response.ok) {
-          throw new Error(`Server responded with status: ${response.status}`);
-        }
-
-        const data = await response.json();
-        console.log("API Response data:", data);
 
         const capitalizeFirstLetter = (s: string) =>
           s.charAt(0).toUpperCase() + s.slice(1).toLowerCase();
@@ -253,18 +228,11 @@ const History: React.FC<HistoryProps> = ({
     setTimeout(() => setShowNotification(null), 2000);
   };
 
-  const handleWithdraw = async (r: LeaveRequestType) => {
+   const handleWithdraw = async (r: LeaveRequestType) => {
     try {
-      const token = localStorage.getItem("token");
-      const response = await fetch(`/api/leaves/requests/${r.id}/withdraw`, {
-        method: "PUT",
-        headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` }
-      });
-      if (!response.ok) throw new Error("Failed to withdraw request");
-
+      await withdrawLeave(r.id);
       setShowNotification(`${r.type} withdrawn`);
       setTimeout(() => setShowNotification(null), 2000);
-
       setLeaveRequests((prev) => prev.filter((req) => req.id !== r.id));
     } catch (error) {
       alert("Failed to withdraw request");

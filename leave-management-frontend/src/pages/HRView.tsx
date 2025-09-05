@@ -2,6 +2,7 @@ import React, { useState, useEffect } from "react";
 import { FaUsers, FaCheckCircle, FaTimesCircle, FaClipboardList } from "react-icons/fa";
 import type { LeaveRequestType } from "../Types";
 import { formatISODate } from "../utils/dateFormatter";
+import { getAllLeaves, approveLeave, rejectLeave, sendMessage } from "../services/api";
 
 
 
@@ -14,106 +15,48 @@ const [customMessage, setCustomMessage] = useState("");
 
 
   useEffect(() => {
-    async function fetchRequests() {
-      try {
-        const token = localStorage.getItem("token");
-        const res = await fetch(`/api/leaves/all`, {
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
-        });
-        if (!res.ok) throw new Error("Failed to fetch leave requests");
-        const data = await res.json();
-        setRequests(data);
-      } catch (error) {
-        console.error("Error fetching leave requests:", error);
-      }
-    }
-    fetchRequests();
-  }, []);
+   async function fetchRequests() {
+      try {
+        const token = localStorage.getItem("token") || undefined;
+        const data = await getAllLeaves(token); // ✅ api.ts function
+        setRequests(data);
+      } catch (error) {
+        console.error("Error fetching leave requests:", error);
+      }
+    }
+    fetchRequests();
+  }, []);
 
 
-  const handleAction = async (leave_id: string, action: "approved" | "rejected") => {
-    try {
-      let url = "";
-      let method = "POST"; // backend expects POST
+   const handleAction = async (leave_id: string, action: "approved" | "rejected") => {
+    try {
+      const token = localStorage.getItem("token") || undefined;
+      if (action === "approved") {
+        await approveLeave(leave_id, token); // ✅ api.ts
+      } else {
+        await rejectLeave(leave_id, token); // ✅ api.ts
+      }
 
-
-      const token = localStorage.getItem("token");
-      if (!token) {
-        alert("You must be logged in");
-        return;
-      }
-
-
-      if (action === "approved") {
-        url = `/api/leaves/approve/${leave_id}`;
-      } else if (action === "rejected") {
-        url = `/api/leaves/reject/${leave_id}`;
-      } else {
-        throw new Error("Invalid action");
-      }
-
-
-      const res = await fetch(url, {
-        method,
-        headers: {
-          Authorization: `Bearer ${token}`,
-          "Content-Type": "application/json",
-        },
-      });
-
-
-      if (!res.ok) throw new Error("Failed to update status");
-
-
-      setRequests((prev) =>
-        prev.map((req) =>
-          req.leave_id === leave_id
-            ? { ...req, status: action }
-            : req
-        )
-      );
-    } catch (error) {
-      alert("Failed to update status: " + error);
-    }
-  };
+      setRequests((prev) =>
+        prev.map((req) =>
+          req.leave_id === leave_id ? { ...req, status: action } : req
+        )
+      );
+    } catch (error) {
+      alert("Failed to update status: " + error);
+    }
+  };
 const handleSendMessage = async (leave_id: string) => {
-  try {
-    const token = localStorage.getItem("token");
-    if (!token) {
-      alert("You must be logged in");
-      return;
-    }
-    if (!customMessage.trim()) {
-      alert("Message cannot be empty");
-      return;
-    }
-
-
-    const res = await fetch(`/api/leaves/requests/${leave_id}/message`, {
-      method: "POST",
-      headers: {
-        Authorization: `Bearer ${token}`,
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({ message: customMessage }),
-    });
-
-
-    if (!res.ok) throw new Error("Failed to send message");
-
-
-    alert("Message sent successfully");
-
-
-    setShowMessageBox(null);
-    setCustomMessage("");
-  } catch (error) {
-    alert("Error sending message: " + error);
-  }
-};
-
+    try {
+      const token = localStorage.getItem("token") || undefined;
+      await sendMessage(leave_id, customMessage, token); // ✅ api.ts
+      alert("Message sent successfully");
+      setShowMessageBox(null);
+      setCustomMessage("");
+    } catch (error) {
+      alert("Error sending message: " + error);
+    }
+  };
 
 return (
   <div className="h-full overflow-hidden bg-gradient-to-br from-gray-50 via-blue-50 to-white p-6">

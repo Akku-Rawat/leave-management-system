@@ -1,6 +1,7 @@
 import React, { useState } from "react";
 import bgImage from "../assets/bg.jpg";
 import logo from '../assets/rolafacelogo.jpg';
+import { login } from "../services/api";
 
 import {
   FaUserCircle,
@@ -23,33 +24,28 @@ const LoginPage: React.FC<LoginPageProps> = ({ onLogin }) => {
   const [shake, setShake] = useState(false);
 
   const handleLogin = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setError("");
-    setShake(false);
-    setIsLoading(true);
+  e.preventDefault();
+  setError("");
+  setShake(false);
+  setIsLoading(true);
 
-    try {
-      const response = await fetch("http://localhost:5000/api/auth/login", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email: username, password }),
-      });
+  try {
+    // ✅ ab api.ts ka login function use hoga
+    const data = await login(username, password);
 
-      if (!response.ok) throw new Error("Invalid credentials");
-
-      const data = await response.json();
-      if (data.token) {
-        localStorage.setItem("token", data.token);
-      }
-      onLogin(data.user);
-    } catch (error) {
-      const errMsg = error instanceof Error ? error.message : String(error);
-      setError(errMsg);
-      setShake(true);
-      setTimeout(() => setShake(false), 600);
-      setIsLoading(false);
+    if (data.token) {
+      localStorage.setItem("token", data.token);
     }
-  };
+    onLogin(data.user);
+  } catch (error) {
+    const errMsg = error instanceof Error ? error.message : String(error);
+    setError(errMsg);
+    setShake(true);
+    setTimeout(() => setShake(false), 600);
+  } finally {
+    setIsLoading(false);
+  }
+};
 
   // 🔄 Loading state
   if (isLoading) {

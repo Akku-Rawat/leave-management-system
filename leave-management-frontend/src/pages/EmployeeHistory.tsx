@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from "react";
+import { getEmployeeHistory } from "../services/api";
 import {
   FaHistory,
   
@@ -46,18 +47,17 @@ const EmployeeHistory: React.FC = () => {
   const recordsPerPage = 10;
 
   useEffect(() => {
-    async function fetchData() {
-      try {
-        const res = await fetch("/api/leaves/emphistory"); // Your backend endpoint
-        const data = await res.json();
-        setAllRecords(data);
-      } catch (error) {
-        console.error("Error fetching leave history: ", error);
-      }
+  async function fetchData() {
+    try {
+      const token = localStorage.getItem("token"); // agar login ke baad token save karte ho
+      const data = await getEmployeeHistory(token || undefined);
+      setAllRecords(data);
+    } catch (error) {
+      console.error("Error fetching leave history: ", error);
     }
-    fetchData();
-  }, []);
-
+  }
+  fetchData();
+}, []);
   const departments = Array.from(new Set(allRecords.map((r) => r.department)));
   const leaveTypes = Array.from(new Set(allRecords.map((r) => r.leaveType)));
   const statuses = ["Approved", "Rejected", "Pending"];

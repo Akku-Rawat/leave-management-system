@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { MdBusinessCenter} from "react-icons/md"
 import { TbBulb } from "react-icons/tb";
+import { getLeaveRequests, getTeamNextWeekLeaves } from "../services/api";
 import {
  
   
@@ -41,20 +42,18 @@ const BossView: React.FC = () => {
   const [currentPage, setCurrentPage] = useState(1);
   const recordsPerPage = 10;
 
-  useEffect(() => {
-    async function fetchLeaveRequests() {
-      try {
-        const res = await fetch("/api/leaves/requests"); // अपने backend API endpoint से replace करें
-        if (!res.ok) throw new Error("Failed to fetch leave requests");
-        const data: LeaveRequest[] = await res.json();
-        setLeaveRequests(data);
-      } catch (error) {
-        console.error("Error fetching leave requests:", error);
-      }
+useEffect(() => {
+  async function fetchLeaveRequests() {
+    try {
+      const token = localStorage.getItem("token");
+      const data = await getLeaveRequests(token || undefined);
+      setLeaveRequests(data);
+    } catch (error) {
+      console.error("Error fetching leave requests:", error);
     }
-    fetchLeaveRequests();
-  }, []);
-
+  }
+  fetchLeaveRequests();
+}, []);
   const totalRequests = leaveRequests.length;
   const pendingRequests = leaveRequests.filter((req) => req.status === "Pending").length;
   const approvedRequests = leaveRequests.filter((req) => req.status === "Approved").length;
@@ -96,19 +95,18 @@ const BossView: React.FC = () => {
   //   }
   // };
        const [teamLeavingNextWeek, setTeamLeavingNextWeek] = useState<number>(0);
-  useEffect(() => {
-    async function fetchTeamLeaves() {
-      try {
-        const res = await fetch("/api/leaves/team-next-week"); // अपने backend API endpoint से replace करें
-        if (!res.ok) throw new Error("Failed to fetch team leaves");
-        const data = await res.json();
-        setTeamLeavingNextWeek(data.count || 0);
-      } catch (error) {
-        console.error("Error fetching team leaves:", error);
-      }
+useEffect(() => {
+  async function fetchTeamLeaves() {
+    try {
+      const token = localStorage.getItem("token");
+      const data = await getTeamNextWeekLeaves(token || undefined);
+      setTeamLeavingNextWeek(data.count || 0);
+    } catch (error) {
+      console.error("Error fetching team leaves:", error);
     }
-    fetchTeamLeaves();
-  }, []);
+  }
+  fetchTeamLeaves();
+}, []);
   // const getStatusIcon = (status: string) => {
   //   switch (status) {
   //     case "Approved":

@@ -11,6 +11,10 @@ import NotificationScreen from "../components/Notification";
 import EncashmentModal from "./EncashmentModal";
 
 import { useNavigate } from "react-router-dom";
+import { getMyLeaves, getStats, createLeave } from "../services/api";
+
+
+
 
 const EmployeeView: React.FC<LeaveRequestProps> = ({ onSubmit }) => {
   type LeaveFormData = {
@@ -60,47 +64,25 @@ const EmployeeView: React.FC<LeaveRequestProps> = ({ onSubmit }) => {
     return localISO; // YYYY-MM-DD in local timezone
   };
 
-  useEffect(() => {
-    async function fetchData() {
-      try {
-        const token = localStorage.getItem("token");
+useEffect(() => {
+  async function fetchData() {
+    try {
+      const token = localStorage.getItem("token") ?? undefined;
+      const leavesJson = await getMyLeaves(token);
+      setLeaves(leavesJson);
 
-        const leavesRes = await fetch("/api/leaves/my", {
-          headers: {
-            ...(token ? { Authorization: `Bearer ${token}` } : {}),
-          },
-        });
-        const leavesJson = await leavesRes.json();
-
-        if (!Array.isArray(leavesJson)) {
-          throw new Error("Invalid leaves data");
-        }
-
-        // const formattedLeaves: CalendarLeave[] = leavesJson.map((leave: any) => ({
-        //   start: new Date(leave.startDate),
-        //   end: new Date(leave.endDate),
-        //   status: leave.status as LeaveStatus,
-        // }));
-
-        setLeaves(leavesJson);
-
-        const statsRes = await fetch("/api/leaves/stats", {
-          headers: {
-            ...(token ? { Authorization: `Bearer ${token}` } : {}),
-          },
-        });
-        const statsJson = await statsRes.json();
-        setUserData({
-          totalLeaves: statsJson.totalLeaves,
-          usedLeaves: statsJson.usedLeaves,
-          pendingLeaves: statsJson.pendingLeaves,
-        });
-      } catch (error) {
-        console.error("Error fetching data", error);
-      }
+      const statsJson = await getStats(token);
+      setUserData({
+        totalLeaves: statsJson.totalLeaves,
+        usedLeaves: statsJson.usedLeaves,
+        pendingLeaves: statsJson.pendingLeaves,
+      });
+    } catch (error) {
+      console.error("Error fetching data", error);
     }
-    fetchData();
-  }, []);
+  }
+  fetchData();
+}, []);
 
   const handleRangeSelect = (range: { from?: Date; to?: Date } | undefined) => {
     if (!range) return;
@@ -120,48 +102,31 @@ const EmployeeView: React.FC<LeaveRequestProps> = ({ onSubmit }) => {
     setFormData((prev) => ({ ...prev, [id]: value }));
   };
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setLoading(true);
-    try {
-      const token = localStorage.getItem("token");
-      const response = await fetch("/api/leaves/create", {
-        method: "POST",
-        credentials: "include",
-        headers: {
-          "Content-Type": "application/json",
-          ...(token ? { Authorization: `Bearer ${token}` } : {}),
-        },
-        body: JSON.stringify(formData),
-      });
+const handleSubmit = async (e: React.FormEvent) => {
+  e.preventDefault();
+  setLoading(true);
+  try {
+    const token = localStorage.getItem("token") ?? undefined;
+    const result = await createLeave(formData, token);
 
-      if (!response.ok) {
-        const errorText = await response.text();
-        throw new Error(`Failed: ${response.status} - ${errorText}`);
-      }
+    setFormData({
+      type: "",
+      duration: "full",
+      startDate: "",
+      endDate: "",
+      reason: "",
+      emergencyContact: "",
+    });
 
-      const result = await response.json();
-
-      setFormData({
-        type: "",
-        duration: "full",
-        startDate: "",
-        endDate: "",
-        reason: "",
-        emergencyContact: "",
-      });
-
-      setLoading(false); // Stop loading before showing notification
-
-      setShowNotification(true);
-
-      if (onSubmit) onSubmit(result);
-    } catch (error: any) {
-      setLoading(false);
-      console.error("Error submitting leave request:", error);
-      alert(`Error: ${error.message || error}`);
-    }
-  };
+    setLoading(false);
+    setShowNotification(true);
+    if (onSubmit) onSubmit(result);
+  } catch (error: any) {
+    setLoading(false);
+    console.error("Error submitting leave request:", error);
+    alert(`Error: ${error.message || error}`);
+  }
+};
 
   if (showNotification) {
     return (
