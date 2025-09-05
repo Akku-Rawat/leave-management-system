@@ -18,6 +18,8 @@ import {
   FaUser
 } from "react-icons/fa";
 import { useNavigate } from "react-router-dom";
+import Skeleton from "react-loading-skeleton";
+import "react-loading-skeleton/dist/skeleton.css";
 
 interface HistoryProps {
   onGoBack: () => void;
@@ -41,10 +43,11 @@ const History: React.FC<HistoryProps> = ({
   const [showNotification, setShowNotification] = useState<string | null>(null);
   const [viewMode, setViewMode] = useState<"personal" | "all">("personal");
   const [showAll, setShowAll] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
 
-  // Fetch data from API
-    useEffect(() => {
+  useEffect(() => {
     async function fetchLeaveRequests() {
+      setIsLoading(true);
       try {
         const token = localStorage.getItem("token") || undefined;
 
@@ -61,8 +64,6 @@ const History: React.FC<HistoryProps> = ({
           s.charAt(0).toUpperCase() + s.slice(1).toLowerCase();
 
         const mappedData = data.map((item: any) => {
-          console.log("API Date:", item.created_at);
-
           let appliedDate;
           if (item.created_at && !isNaN(new Date(item.created_at).getTime())) {
             const createdDate = new Date(item.created_at);
@@ -97,18 +98,18 @@ const History: React.FC<HistoryProps> = ({
         });
 
         if (userRole === "hr" && viewMode === "all") {
-          // HR "All Employees" view -> only pending requests
           const onlyPending = mappedData.filter(
             (item: any) => item.status.toLowerCase() === "pending"
           );
           setLeaveRequests(onlyPending);
         } else {
-          // Other roles -> all data
           setLeaveRequests(mappedData);
         }
       } catch (error) {
         console.error("Error fetching leave requests:", error);
         setLeaveRequests([]);
+      } finally {
+        setIsLoading(false);
       }
     }
 
@@ -136,11 +137,6 @@ const History: React.FC<HistoryProps> = ({
     });
   }, [leaveRequests, currentUserId, userRole, viewMode]);
 
-  console.log("Current User ID String:", currentIdStr);
-  console.log("Leave Requests:", leaveRequests);
-  console.log("Filtered User Requests:", userFilteredRequests);
-
-  // Analytics calculation
   const analytics = useMemo(() => {
     const approved = userFilteredRequests.filter((r) => r.status === "approved");
     const pending = userFilteredRequests.filter((r) => r.status === "pending");
@@ -160,7 +156,6 @@ const History: React.FC<HistoryProps> = ({
     };
   }, [userFilteredRequests]);
 
-  // Filter and search requests
   const filteredRequests = useMemo(() => {
     let filtered = userFilteredRequests;
 
@@ -229,25 +224,22 @@ const History: React.FC<HistoryProps> = ({
   };
 
   const handleWithdraw = async (r: LeaveRequestType) => {
-  try {
-    const token = localStorage.getItem("token") || undefined;
-    await withdrawLeave(r.id, token); // ✅ Token added
-    setShowNotification(`${r.type} withdrawn`);
-    setTimeout(() => setShowNotification(null), 2000);
-    // Refresh data after withdrawal
-    window.location.reload(); // or call fetchLeaveRequests again
-  } catch (error) {
-    console.error("Withdraw error:", error);
-    alert("Failed to withdraw request");
-  }
-};
+    try {
+      const token = localStorage.getItem("token") || undefined;
+      await withdrawLeave(r.id, token);
+      setShowNotification(`${r.type} withdrawn`);
+      setTimeout(() => setShowNotification(null), 2000);
+      window.location.reload();
+    } catch (error) {
+      console.error("Withdraw error:", error);
+      alert("Failed to withdraw request");
+    }
+  };
 
-
-  // Using navigate from react-router-dom instead of setActiveView
   const handleDuplicate = (r: LeaveRequestType) => {
     setShowNotification(`Duplicating ${r.type} request`);
     setTimeout(() => setShowNotification(null), 2000);
-    navigate("/apply"); // navigate to apply page
+    navigate("/apply");
   };
 
   const handleExportData = () => {
@@ -257,8 +249,7 @@ const History: React.FC<HistoryProps> = ({
       filteredRequests
         .map(
           (req) =>
-            `${req.type},${req.status},${req.start_date},${req.end_date},${req.days},"${req.reason}",${
-              req.employeeName || "N/A"
+            `${req.type},${req.status},${req.start_date},${req.end_date},${req.days},"${req.reason}",${req.employeeName || "N/A"
             },${req.date}`
         )
         .join("\n");
@@ -286,14 +277,12 @@ const History: React.FC<HistoryProps> = ({
     };
   }, []);
 
-  // New Request and Create Request handlers using navigate
   const handleNewRequestClick = () => {
     navigate("/apply");
   };
 
   return (
     <div className="bg-gray-50 h-full flex flex-col overflow-hidden">
-      {/* Notification */}
       {showNotification && (
         <div className="fixed top-4 right-4 z-50 bg-blue-600 text-white px-4 py-2 rounded-lg shadow-lg text-sm">
           {showNotification}
@@ -301,7 +290,6 @@ const History: React.FC<HistoryProps> = ({
       )}
 
       <div className="w-[1200px] flex-1 flex flex-col overflow-hidden items-center">
-        {/* Analytics Header - Employee sees only their personal data */}
         {(userRole === "employee" || userRole === "hr") && (
           <div className="bg-white rounded-2xl shadow-xl border border-slate-200 w-[1100px] mt-6 flex-shrink-0">
             <div className="bg-gradient-to-r from-blue-600 to-indigo-700 px-4 py-3 rounded-t-2xl">
@@ -316,23 +304,24 @@ const History: React.FC<HistoryProps> = ({
                   </p>
                 </div>
 
-                {/* HR View Mode Toggle */}
                 {userRole === "hr" && (
                   <div className="flex items-center bg-white bg-opacity-20 rounded-lg p-1">
                     <button
                       onClick={() => setViewMode("personal")}
-                      className={`px-3 py-1 rounded text-xs font-medium transition-colors ${
-                        viewMode === "personal" ? "bg-white text-blue-700" : "text-white hover:bg-white hover:bg-opacity-20"
-                      }`}
+                      className={`px-3 py-1 rounded text-xs font-medium transition-colors ${viewMode === "personal"
+                        ? "bg-white text-blue-700"
+                        : "text-white hover:bg-white hover:bg-opacity-20"
+                        }`}
                     >
                       <FaUser className="w-3 h-3 mr-1 inline" />
                       Personal
                     </button>
                     <button
                       onClick={() => setViewMode("all")}
-                      className={`px-3 py-1 rounded text-xs font-medium transition-colors ${
-                        viewMode === "all" ? "bg-white text-blue-700" : "text-white hover:bg-white hover:bg-opacity-20"
-                      }`}
+                      className={`px-3 py-1 rounded text-xs font-medium transition-colors ${viewMode === "all"
+                        ? "bg-white text-blue-700"
+                        : "text-white hover:bg-white hover:bg-opacity-20"
+                        }`}
                     >
                       <FaClipboardList className="w-3 h-3 mr-1 inline" />
                       All Employees
@@ -342,7 +331,6 @@ const History: React.FC<HistoryProps> = ({
               </div>
             </div>
 
-            {/* Controls */}
             <div className="p-4 border-b border-slate-100">
               <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-3">
                 <div className="flex items-center space-x-3">
@@ -414,7 +402,6 @@ const History: React.FC<HistoryProps> = ({
           </div>
         )}
 
-        {/* Employee Overview - only HR (all mode) or Boss */}
         {((userRole === "hr" && viewMode === "all") || userRole === "boss") && (
           <div className="bg-white rounded-2xl shadow-xl border border-slate-200 mt-4 w-[1100px]">
             <div className="px-4 py-3 border-b border-slate-100 bg-gradient-to-r from-indigo-50 to-indigo-100 rounded-t-2xl">
@@ -475,7 +462,6 @@ const History: React.FC<HistoryProps> = ({
           </div>
         )}
 
-        {/* Recent Leave Requests - hide for boss */}
         {(userRole === "employee" || (userRole === "hr" && viewMode === "personal")) && (
           <div className="bg-white rounded-2xl shadow-xl border border-slate-200 overflow-hidden w-[1100px] mt-4">
             <div className="px-4 py-3 border-b border-slate-100 flex items-center justify-between bg-gradient-to-r from-slate-50 to-slate-100">
@@ -498,8 +484,14 @@ const History: React.FC<HistoryProps> = ({
               </button>
             </div>
 
-            <div className="p-4 h-[350px] overflow-auto">
-              {filteredRequests.length === 0 ? (
+           <div className="p-4 h-[350px] overflow-auto">
+ {isLoading ? (
+  <div className="space-y-3 h-[700px]">
+    {[...Array(5)].map((_, idx) => (
+      <Skeleton key={idx} height={96} />
+    ))}
+  </div>
+  ) : filteredRequests.length === 0 ? (
                 <div className="h-full flex items-center justify-center text-center">
                   <div>
                     <FaClipboardList className="w-16 h-16 text-slate-400 mx-auto mb-4" />
@@ -626,7 +618,6 @@ const History: React.FC<HistoryProps> = ({
                       </button>
                     </div>
                   )}
-
                   {showAll && (
                     <div className="text-center py-3">
                       <button

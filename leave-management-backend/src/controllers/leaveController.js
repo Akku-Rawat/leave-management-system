@@ -3,7 +3,7 @@ import prisma from "../../prisma/client.js";
 import jwt from 'jsonwebtoken';
 import { withdrawLeave ,getRemainingLeaveBalance,processLeaveEncashment } from '../services/leaveService.js';
 
-// Leave Request Create करना
+// Leave Request Create
 export const createLeave = async (req, res) => {
   try {
     const user = await prisma.user.findUnique({
@@ -22,7 +22,7 @@ export const createLeave = async (req, res) => {
   }
 };
 
-// Logged-in user के Leave records Fetch करना
+// Logged-in user Leave records Fetch
 export const getMyLeaves = async (req, res) => {
   try {
     const userId = req.user.user_id;
@@ -42,7 +42,7 @@ export const getMyLeaves = async (req, res) => {
 };
 
 
-// User के Leave stats (total, used, pending) प्राप्त करना
+// User के Leave stats (total, used, pending) प
 export const getUserStats = async (req, res) => {
   try {
     const userId = req.user.user_id;
@@ -77,35 +77,37 @@ export const getUserStats = async (req, res) => {
 };
 
 
-// Leave Request Approve करना
+// Leave Request Approve
 export const approveLeave = async (req, res) => {
   try {
     const leave = await updateLeaveStatus(req.params.id, "approved");
 
     if (!leave) {
-      return res.status(404).send("Leave not found");
+      return res.status(404).json({ error: "Leave not found" });
     }
 
-    res.send("<h2>Leave Approved ✅</h2>");
+    res.json({ message: "Leave approved successfully", leave });
   } catch (err) {
-    res.status(500).send("Error approving leave");
+    res.status(500).json({ error: "Error approving leave" });
   }
 };
 
-// Leave Request Reject करना
+
+// Leave Request Reject 
 export const rejectLeave = async (req, res) => {
   try {
     const leave = await updateLeaveStatus(req.params.id, "rejected");
 
     if (!leave) {
-      return res.status(404).send("Leave not found");
+      return res.status(404).json({ error: "Leave not found" });
     }
 
-    res.send("<h2>Leave Rejected ❌</h2>");
+    res.json({ message: "Leave rejected successfully", leave });
   } catch (err) {
-    res.status(500).send("Error rejecting leave");
+    res.status(500).json({ error: "Error rejecting leave" });
   }
 };
+
 
 
 // New controller: Get all leave requests for HR

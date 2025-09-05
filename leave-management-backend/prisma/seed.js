@@ -35,6 +35,7 @@ async function main() {
     { name: 'Rahul', email: 'rahul@rolaface.com', password: 'rahul', role: employeeRole },
     { name: 'Bhattsir', email: 'bhattsir@rolaface.com', password: 'bhattsir', role: hrRole },
     { name: 'Madhav', email: 'madhav@rolaface.com', password: 'madhav', role: employeeRole },
+    { name: 'Rishab', email: 'rishab@rolaface.com', password: 'rishab', role: employeeRole },
     { name: 'Manish', email: 'manish@rolaface.com', password: 'manish', role: employeeRole },
     { name: 'Vinodsir', email: 'vinodsir@rolaface.com', password: 'vinodsir', role: bossRole },
   ];

@@ -52,7 +52,7 @@ export async function getAllLeaves(token?: string) {
 }
 
 export async function withdrawLeave(leaveId: string, token?: string) {
-  const res = await fetch(`${API_URL}/leaves/${leaveId}/withdraw`, {
+  const res = await fetch(`${API_URL}/leaves/requests/${leaveId}/withdraw`, {
     method: "PUT",
     headers: {
       "Content-Type": "application/json",
