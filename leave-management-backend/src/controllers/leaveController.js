@@ -62,7 +62,7 @@ export const getUserStats = async (req, res) => {
     });
 
     // Remaining calculate karo
-    const remainingLeaves = totalLeaves - usedLeaves ;
+    const remainingLeaves = totalLeaves - usedLeaves + pendingLeaves;
 
     // Response me numbers bhejo zero fallback ke sath
     res.json({

@@ -38,7 +38,7 @@ export const getUserStats = async (req, res) => {
       where: { user_id: userId, status: "pending" },
     });
 
-    const remainingLeaves = totalLeaves - usedLeaves;
+    const remainingLeaves = totalLeaves - usedLeaves + pendingLeaves;
 
     res.json({
       totalLeaves,
