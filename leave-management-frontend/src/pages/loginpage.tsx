@@ -226,7 +226,7 @@ const LoginPage: React.FC<LoginPageProps> = ({ onLogin }) => {
                 placeholder="Enter your username"
                 required
               />
-              <p className="text-white/50 text-xs mt-1">Try: emp, hr, boss</p>
+              <p className="text-white/50 text-xs mt-1">Try: name@rolaface.com</p>
             </div>
             <div className="mb-6 relative">
               <label className="block text-white/90 mb-2 font-medium">Password</label>

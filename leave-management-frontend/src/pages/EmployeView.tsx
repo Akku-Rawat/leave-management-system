@@ -269,7 +269,7 @@ const handleSubmit = async (e: React.FormEvent) => {
                       disabled={loading}
                     >
                       <option value="">Select leave type</option>
-                      <option value="Annual Leave">Annual Leave</option>
+                      <option value="Casual Leave">Casual Leave</option>
                       <option value="Sick Leave">Sick Leave</option>
                       <option value="Emergency Leave">Emergency Leave</option>
                     </select>

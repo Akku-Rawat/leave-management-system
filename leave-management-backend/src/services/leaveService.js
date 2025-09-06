@@ -55,26 +55,40 @@ export const getUserStats = async (req, res) => {
 // Update leave status and adjust used leaves accordingly
 export const updateLeaveStatus = async (leave_id, status) => {
   if (!status) throw new Error("Status is required");
+
   const normalizedStatus = status.toLowerCase();
 
   try {
+    // Update the leave status
     const leave = await prisma.leaveRequest.update({
       where: { leave_id: parseInt(leave_id) },
       data: { status: normalizedStatus },
     });
 
     if (normalizedStatus === "approved" || normalizedStatus === "rejected") {
-      const leaveCount = await prisma.leaveRequest.count({
+      // Fetch all approved leaves for the user
+      const approvedLeaves = await prisma.leaveRequest.findMany({
         where: { user_id: leave.user_id, status: "approved" },
       });
 
+      // Calculate used leaves based on duration
+      const usedLeaves = approvedLeaves.reduce((acc, leave) => {
+        // Count full day as 1, half day ("first" or "second") as 0.5
+        if (leave.duration === "first" || leave.duration === "second") {
+          return acc + 0.5;
+        }
+        return acc + 1;
+      }, 0);
+
+      // Update leave balance used_leaves with decimal values
       await prisma.leaveBalance.updateMany({
         where: { user_id: leave.user_id },
-        data: { used_leaves: leaveCount },
+        data: { used_leaves: usedLeaves },
       });
+
+      return leave;
     }
 
-    return leave;
   } catch (err) {
     console.error("Error in updateLeaveStatus:", err);
     if (err.code === "P2025") {
