@@ -57,7 +57,7 @@ const EmployeeView: React.FC<LeaveRequestProps> = ({ onSubmit }) => {
 
   const [loading, setLoading] = useState(false);
 
-  const remainingLeaves = userData.totalLeaves - userData.usedLeaves - userData.pendingLeaves;
+  const remainingLeaves = userData.totalLeaves - userData.usedLeaves;
 
   const formatDate = (date: Date) => {
     const tzOffset = date.getTimezoneOffset() * 60000; // offset in ms
