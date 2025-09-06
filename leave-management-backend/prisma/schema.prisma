@@ -57,12 +57,13 @@ enum Status {
 
 model LeaveBalance {
   balance_id   Int      @id @default(autoincrement())
-  user_id      Int
+  user_id      Int      @unique
   user         User     @relation(fields: [user_id], references: [user_id])
   total_leaves Int      @default(30)
   used_leaves  Int      @default(0)
   updated_at   DateTime @updatedAt
 }
+
 
 model LeaveAction {
   action_id Int          @id @default(autoincrement())

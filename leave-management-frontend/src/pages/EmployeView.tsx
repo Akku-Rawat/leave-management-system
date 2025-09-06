@@ -119,13 +119,37 @@ const handleEncash = async (action: "carry_forward" | "cash_encash") => {
     setFormData((prev) => ({ ...prev, [id]: value }));
   };
 
+const refreshData = async () => {
+  try {
+    const token = localStorage.getItem("token") ?? undefined;
+    const [statsJson, leavesJson] = await Promise.all([
+      getStats(token),
+      getMyLeaves(token)
+    ]);
+    
+    setUserData({
+      totalLeaves: statsJson.totalLeaves,
+      usedLeaves: statsJson.usedLeaves,
+      pendingLeaves: statsJson.pendingLeaves,
+    });
+    setLeaves(leavesJson);
+  } catch (error) {
+    console.error("Error refreshing data", error);
+  }
+};
+
+// HandleSubmit function
 const handleSubmit = async (e: React.FormEvent) => {
   e.preventDefault();
   setLoading(true);
   try {
     const token = localStorage.getItem("token") ?? undefined;
     const result = await createLeave(formData, token);
-
+    
+    // 🔥 Data refresh karo
+    await refreshData();
+    
+    // Form reset karo
     setFormData({
       type: "",
       duration: "full",
@@ -134,7 +158,7 @@ const handleSubmit = async (e: React.FormEvent) => {
       reason: "",
       emergencyContact: "",
     });
-
+    
     setLoading(false);
     setShowNotification(true);
     if (onSubmit) onSubmit(result);
@@ -144,6 +168,7 @@ const handleSubmit = async (e: React.FormEvent) => {
     alert(`Error: ${error.message || error}`);
   }
 };
+
 
   if (showNotification) {
     return (

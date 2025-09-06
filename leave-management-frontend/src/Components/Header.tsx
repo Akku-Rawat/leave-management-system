@@ -8,15 +8,13 @@ import {
   getNotificationsType1,
   getNotificationsType2,
   getNotificationsType3,
-  markNotificationAsRead
+  markNotificationAsRead,
 } from "../services/api";
-
-
 
 export interface HeaderProps {
   currentUser: User;
   onLogout: () => void;
-  onNavigate?: (path: string) => void; // Optional navigation handler
+  onNavigate?: (path: string) => void;
 }
 
 const DropdownPortal: React.FC<{
@@ -29,7 +27,6 @@ const DropdownPortal: React.FC<{
   React.useEffect(() => {
     if (anchorRef.current) {
       const rect = anchorRef.current.getBoundingClientRect();
-
       setPos({
         top: rect.bottom + window.scrollY + 5,
         left: rect.left + window.scrollX,
@@ -76,75 +73,68 @@ const DropdownPortal: React.FC<{
 };
 
 const Header: React.FC<HeaderProps> = ({ currentUser, onLogout, onNavigate }) => {
-  const [settingsLoading, setSettingsLoading] = React.useState<string | null>(null);
-const [, setUserList] = useState<User[]>([]);
-  // State for combined notifications from 3 endpoints
+  const [settingsLoading, setSettingsLoading] = useState<string | null>(null);
+  const [, setUserList] = useState<User[]>([]);
   const [notifications, setNotifications] = useState<
     { id: number; message: string; time: string }[]
   >([]);
   const [showNotifications, setShowNotifications] = useState(false);
   const [showSettings, setShowSettings] = useState(false);
-  const [showProfile, setShowProfile] = React.useState(false);
-  
+  const [showProfile, setShowProfile] = useState(false);
   const [userInfo, setUserInfo] = useState<User | null>(null);
 
   const notifRef = React.useRef<HTMLButtonElement | null>(null);
   const settingsRef = React.useRef<HTMLButtonElement | null>(null);
   const profileRef = React.useRef<HTMLButtonElement | null>(null);
 
-  // Fetch combined notifications from three different backend endpoints
-useEffect(() => {
-    async function fetchAllNotifications() {
-      try {
-        const token = localStorage.getItem("token");
-        
-        // Use API functions instead of direct fetch
-        const [data1, data2, data3] = await Promise.all([
-          getNotificationsType1(token || undefined),
-          getNotificationsType2(token || undefined),
-          getNotificationsType3(token || undefined),
-        ]);
-
-        const combined = [...data1, ...data2, ...data3];
-        combined.sort((a, b) => (a.time < b.time ? 1 : -1));
-        setNotifications(combined);
-      } catch (error) {
-        console.error("Error fetching notifications:", error);
-        setNotifications([]);
-      }
+  // Reusable function to fetch & sort notifications newest-first
+  const refreshNotifications = async () => {
+    try {
+      const token = localStorage.getItem("token") ?? undefined;
+      const [data1, data2, data3] = await Promise.all([
+        getNotificationsType1(token),
+        getNotificationsType2(token),
+        getNotificationsType3(token),
+      ]);
+      const combined = [...data1, ...data2, ...data3];
+      combined.sort((a, b) => new Date(b.time).getTime() - new Date(a.time).getTime());
+      setNotifications(combined);
+    } catch (error) {
+      console.error("Error fetching notifications:", error);
+      setNotifications([]);
     }
+  };
 
-    fetchAllNotifications();
+  // Fetch notifications on mount
+  useEffect(() => {
+    refreshNotifications();
   }, []);
 
-
   // Fetch full user info for profile dropdown
-   useEffect(() => {
+  useEffect(() => {
     async function fetchUserInfo() {
       try {
-        const token = localStorage.getItem("token");
-        const data: User = await getUserInfo(token || undefined);
+        const token = localStorage.getItem("token") ?? undefined;
+        const data: User = await getUserInfo(token);
         setUserInfo(data);
       } catch (error) {
         console.error("Failed to fetch user info:", error);
       }
     }
-
     fetchUserInfo();
   }, []);
-const handleSettingsAction = async (action: string) => {
+
+  const handleSettingsAction = async (action: string) => {
     setShowSettings(false);
     setSettingsLoading(action);
     try {
-      const token = localStorage.getItem("token");
-      
+      const token = localStorage.getItem("token") ?? undefined;
       switch (action) {
         case "addUser":
           onNavigate?.("/admin/user/add");
           break;
         case "users":
-          // Use API function instead of direct fetch
-          const dataUsers: User[] = await getUserList(token || undefined);
+          const dataUsers: User[] = await getUserList(token);
           setUserList(dataUsers);
           onNavigate?.("/admin/users");
           break;
@@ -174,17 +164,17 @@ const handleSettingsAction = async (action: string) => {
     }
   };
 
-
-//   // Mark notification as read by calling backend and updating UI
-//  const markNotificationAsReadHandler = async (notificationId: number) => {
-//     try {
-//       const token = localStorage.getItem("token");
-//       await markNotificationAsRead(notificationId, token || undefined);
-//       setNotifications((prev) => prev.filter((notif) => notif.id !== notificationId));
-//     } catch (error) {
-//       console.error("Error marking notification as read:", error);
-//     }
-//   };
+  // Mark a notification as read and refresh the list
+  const handleMarkAsRead = async (notificationId: number) => {
+    try {
+      const token = localStorage.getItem("token") ?? undefined;
+      await markNotificationAsRead(notificationId, token);
+      // Remove locally for instant feedback
+      setNotifications((prev) => prev.filter((notif) => notif.id !== notificationId));
+    } catch (error) {
+      console.error("Error marking notification as read:", error);
+    }
+  };
 
   const notificationIconSize = 25;
   const iconSize = 30;
@@ -211,7 +201,10 @@ const handleSettingsAction = async (action: string) => {
             {/* Notifications */}
             <button
               ref={notifRef}
-              onClick={() => setShowNotifications(!showNotifications)}
+              onClick={() => {
+                setShowNotifications((prev) => !prev);
+                refreshNotifications();
+              }}
               className="relative p-2 rounded-full hover:bg-gray-100 text-gray-600"
               aria-label="Notifications"
             >
@@ -236,7 +229,7 @@ const handleSettingsAction = async (action: string) => {
                       <div
                         key={notif.id}
                         className="p-2 border-b hover:bg-gray-50 cursor-pointer"
-                        onClick={() => markNotificationAsRead(notif.id)}
+                        onClick={() => handleMarkAsRead(notif.id)}
                       >
                         <p className="text-sm text-gray-800">{notif.message}</p>
                         <p className="text-xs text-gray-500">{notif.time}</p>
@@ -252,7 +245,7 @@ const handleSettingsAction = async (action: string) => {
               <>
                 <button
                   ref={settingsRef}
-                  onClick={() => setShowSettings(!showSettings)}
+                  onClick={() => setShowSettings((prev) => !prev)}
                   className="p-2 rounded-full hover:bg-gray-100 text-gray-600"
                   aria-label="Settings"
                   disabled={settingsLoading !== null}
@@ -263,45 +256,47 @@ const handleSettingsAction = async (action: string) => {
                 {showSettings && settingsRef.current && (
                   <DropdownPortal anchorRef={settingsRef} onClose={() => setShowSettings(false)}>
                     <div className="py-1">
-                     {(currentUser.role === "hr" || currentUser.role === "boss") && (
-  <>
-    <button
-      onClick={() => handleSettingsAction("addUser")}
-      disabled={settingsLoading === "addUser"}
-      className="w-full text-left px-4 py-2 hover:bg-gray-100 disabled:opacity-50"
-    >
-      {settingsLoading === "addUser" ? "Loading..." : "Add User"}
-    </button>
-    <button
-      onClick={() => handleSettingsAction("users")}
-      disabled={settingsLoading === "users"}
-      className="w-full text-left px-4 py-2 hover:bg-gray-100 disabled:opacity-50"
-    >
-      {settingsLoading === "users" ? "Loading..." : "User Management"}
-    </button>
-    <button
-      onClick={() => handleSettingsAction("policies")}
-      disabled={settingsLoading === "policies"}
-      className="w-full text-left px-4 py-2 hover:bg-gray-100 disabled:opacity-50"
-    >
-      {settingsLoading === "policies" ? "Loading..." : "Leave Policies"}
-    </button>
-    <button
-      onClick={() => handleSettingsAction("analytics")}
-      disabled={settingsLoading === "analytics"}
-      className="w-full text-left px-4 py-2 hover:bg-gray-100 disabled:opacity-50"
-    >
-      {settingsLoading === "analytics" ? "Loading..." : "System Analytics"}
-    </button>
-    <button
-      onClick={() => handleSettingsAction("changePassword")}
-      disabled={settingsLoading === "changePassword"}
-      className="w-full text-left px-4 py-2 hover:bg-gray-100 disabled:opacity-50"
-    >
-      {settingsLoading === "changePassword" ? "Loading..." : "Change Password"}
-    </button>
-  </>
-)}
+                      {(currentUser.role === "hr" || currentUser.role === "boss") && (
+                        <>
+                          <button
+                            onClick={() => handleSettingsAction("addUser")}
+                            disabled={settingsLoading === "addUser"}
+                            className="w-full text-left px-4 py-2 hover:bg-gray-100 disabled:opacity-50"
+                          >
+                            {settingsLoading === "addUser" ? "Loading..." : "Add User"}
+                          </button>
+                          <button
+                            onClick={() => handleSettingsAction("users")}
+                            disabled={settingsLoading === "users"}
+                            className="w-full text-left px-4 py-2 hover:bg-gray-100 disabled:opacity-50"
+                          >
+                            {settingsLoading === "users" ? "Loading..." : "User Management"}
+                          </button>
+                          <button
+                            onClick={() => handleSettingsAction("policies")}
+                            disabled={settingsLoading === "policies"}
+                            className="w-full text-left px-4 py-2 hover:bg-gray-100 disabled:opacity-50"
+                          >
+                            {settingsLoading === "policies" ? "Loading..." : "Leave Policies"}
+                          </button>
+                          <button
+                            onClick={() => handleSettingsAction("analytics")}
+                            disabled={settingsLoading === "analytics"}
+                            className="w-full text-left px-4 py-2 hover:bg-gray-100 disabled:opacity-50"
+                          >
+                            {settingsLoading === "analytics" ? "Loading..." : "System Analytics"}
+                          </button>
+                          <button
+                            onClick={() => handleSettingsAction("changePassword")}
+                            disabled={settingsLoading === "changePassword"}
+                            className="w-full text-left px-4 py-2 hover:bg-gray-100 disabled:opacity-50"
+                          >
+                            {settingsLoading === "changePassword"
+                              ? "Loading..."
+                              : "Change Password"}
+                          </button>
+                        </>
+                      )}
                       {currentUser.role === "boss" && (
                         <>
                           <button
@@ -309,21 +304,18 @@ const handleSettingsAction = async (action: string) => {
                             disabled={settingsLoading === "delegation"}
                             className="w-full text-left px-4 py-2 hover:bg-gray-100 disabled:opacity-50"
                           >
-                            {settingsLoading === "delegation" ? "Loading..." : "Delegation Settings"}
+                            {settingsLoading === "delegation"
+                              ? "Loading..."
+                              : "Delegation Settings"}
                           </button>
                           <button
                             onClick={() => handleSettingsAction("config")}
                             disabled={settingsLoading === "config"}
                             className="w-full text-left px-4 py-2 hover:bg-gray-100 disabled:opacity-50"
                           >
-                            {settingsLoading === "config" ? "Loading..." : "System Configuration"}
-                          </button>
-                          <button
-                            onClick={() => handleSettingsAction("changePassword")}
-                            disabled={settingsLoading === "changePassword"}
-                            className="w-full text-left px-4 py-2 hover:bg-gray-100 disabled:opacity-50"
-                          >
-                            {settingsLoading === "changePassword" ? "Loading..." : "Change Password"}
+                            {settingsLoading === "config"
+                              ? "Loading..."
+                              : "System Configuration"}
                           </button>
                         </>
                       )}
@@ -336,7 +328,7 @@ const handleSettingsAction = async (action: string) => {
             {/* Profile dropdown */}
             <button
               ref={profileRef}
-              onClick={() => setShowProfile(!showProfile)}
+              onClick={() => setShowProfile((prev) => !prev)}
               className="p-2 rounded-full hover:bg-gray-100 text-gray-600"
               aria-label="Profile"
             >
@@ -345,46 +337,45 @@ const handleSettingsAction = async (action: string) => {
 
             {showProfile && profileRef.current && (
               <DropdownPortal anchorRef={profileRef} onClose={() => setShowProfile(false)}>
-    <div className="py-1">
-      <div className="px-4 py-2 border-b">
-        <p className="text-sm font-medium text-gray-800">
-          {userInfo ? userInfo.name : "Loading..."}
-        </p>
-        <p className="text-xs text-gray-500 capitalize">
-          {userInfo ? ` ${userInfo.role} • ${userInfo.department} ` : ""}
-        </p>
-      </div>
+                <div className="py-1">
+                  <div className="px-4 py-2 border-b">
+                    <p className="text-sm font-medium text-gray-800">
+                      {userInfo ? userInfo.name : "Loading..."}
+                    </p>
+                    <p className="text-xs text-gray-500 capitalize">
+                      {userInfo ? ` ${userInfo.role} • ${userInfo.department} ` : ""}
+                    </p>
+                  </div>
 
-      {/* Add User button for HR and Boss roles */}
-      {(currentUser.role === "hr" || currentUser.role === "boss") && (
-        <button
-          onClick={() => {
-            setShowProfile(false);
-            onNavigate?.("/admin/users/add");
-          }}
-          className="w-full text-left px-4 py-2 hover:bg-gray-100"
-        >
-          Add User
-        </button>
-      )}
+                  {(currentUser.role === "hr" || currentUser.role === "boss") && (
+                    <button
+                      onClick={() => {
+                        setShowProfile(false);
+                        onNavigate?.("/admin/users/add");
+                      }}
+                      className="w-full text-left px-4 py-2 hover:bg-gray-100"
+                    >
+                      Add User
+                    </button>
+                  )}
 
-      <button
-        onClick={() => {
-          setShowProfile(false);
-          onNavigate?.("/profile");
-        }}
-        className="w-full text-left px-4 py-2 hover:bg-gray-100"
-      >
-        View Profile
-      </button>
-      <button
-        onClick={onLogout}
-        className="w-full text-left px-4 py-2 hover:bg-gray-100 text-red-600"
-      >
-        Logout
-      </button>
-    </div>
-  </DropdownPortal>
+                  <button
+                    onClick={() => {
+                      setShowProfile(false);
+                      onNavigate?.("/profile");
+                    }}
+                    className="w-full text-left px-4 py-2 hover:bg-gray-100"
+                  >
+                    View Profile
+                  </button>
+                  <button
+                    onClick={onLogout}
+                    className="w-full text-left px-4 py-2 hover:bg-gray-100 text-red-600"
+                  >
+                    Logout
+                  </button>
+                </div>
+              </DropdownPortal>
             )}
           </div>
         </div>
