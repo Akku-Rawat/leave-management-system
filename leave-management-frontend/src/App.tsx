@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect, type JSX } from "react";
 import { Routes, Route, Navigate, useNavigate } from "react-router-dom";
 
@@ -13,6 +14,7 @@ import EmployeeManagement from "./pages/EmployeeManagement";
 import Documentation from "./components/documentation";
 import Reports from "./pages/Reports";
 import Profile from "./components/profile";
+import UserManagement from "./components/usermanagement";
 
 import type { User, LeaveRequestType, LeaveRequestFormData } from "./Types";
 
@@ -23,7 +25,9 @@ const App: React.FC = () => {
   const [leaveRequests, setLeaveRequests] = useState<LeaveRequestType[]>([]);
   const [, setSubmitSuccess] = useState(false);
   const [loading, setLoading] = useState(true);
-  const [, setActiveView] = React.useState<string>(""); 
+  const [activeView, setActiveView] = React.useState<string>(
+    window.location.pathname.replace("/", "") || "apply"
+  );
 
   useEffect(() => {
     const savedUser = localStorage.getItem("currentUser");
@@ -33,27 +37,43 @@ const App: React.FC = () => {
     setLoading(false);
   }, []);
 
+  // Sync activeView with browser's URL changes (back/forward)
+  useEffect(() => {
+    const onPopState = () => setActiveView(window.location.pathname.replace("/", "") || "apply");
+    window.addEventListener("popstate", onPopState);
+    return () => window.removeEventListener("popstate", onPopState);
+  }, []);
+
   if (loading) {
     return <div>Loading...</div>;
   }
 
-  const handleLogin = (user: User) => {
-    const roleName =
-      typeof user.role === "string" ? user.role : user.role.role_name;
+const handleLogin = (user: User) => {
+  let roleName: "employee" | "hr" | "boss";
+  if (typeof user.role === "string") {
+    roleName = user.role as "employee" | "hr" | "boss";
+  } else {
+    roleName = user.role.role_name;
+  }
+  roleName = roleName.toLowerCase() as "employee" | "hr" | "boss";
 
-    const normalizedUser = {
-      ...user,
-      id: String(user.user_id ?? user.id ?? ""),
-      role: { role_name: roleName },
-    };
-
-    setCurrentUser(normalizedUser);
-    localStorage.setItem("currentUser", JSON.stringify(normalizedUser));
-
-    if (roleName === "boss") navigate("/boss-dashboard");
-    else if (roleName === "hr") navigate("/dashboard");
-    else navigate("/apply");
+  const normalizedUser: User = {
+    ...user,
+    id: String(user.user_id ?? user.id ?? ""),
+    role: roleName, // <- assign as string here!
   };
+
+  setCurrentUser(normalizedUser);
+  localStorage.setItem("currentUser", JSON.stringify(normalizedUser));
+
+  let route = "/apply";
+  if (roleName === "boss") route = "/boss-dashboard";
+  else if (roleName === "hr") route = "/dashboard";
+
+  navigate(route);
+  setActiveView(route.replace("/", ""));
+};
+
 
   const handleLogout = () => {
     setCurrentUser(null);
@@ -93,6 +113,7 @@ const App: React.FC = () => {
     setLeaveRequests((prev) => [newRequest, ...prev]);
     setSubmitSuccess(true);
     navigate("/apply");
+    setActiveView("apply");
   };
 
   const RequireAuth: React.FC<{ children: JSX.Element }> = ({ children }) => {
@@ -103,49 +124,59 @@ const App: React.FC = () => {
   const roleName =
     currentUser &&
     (typeof currentUser.role === "string"
-      ? currentUser.role
-      : currentUser.role.role_name);
+      ? currentUser.role.toLowerCase()
+      : currentUser.role.role_name.toLowerCase());
 
   if (!currentUser) return <LoginPage onLogin={handleLogin} />;
 
   return (
     <>
-      <Header
-        currentUser={currentUser}
-        onLogout={handleLogout}
-        onNavigate={navigate}
-      />
+      <Header currentUser={currentUser} onLogout={handleLogout} onNavigate={navigate} />
       <div className="flex">
         <Sidebar
-          activeView={window.location.pathname.replace("/", "") || "apply"}
-          onChangeView={(view) => navigate(`/${view}`)}
+          activeView={activeView}
+          onChangeView={(view) => {
+            navigate(`/${view}`);
+            setActiveView(view);
+          }}
           userRole={currentUser.role}
           currentUserName={currentUser.name}
           onLogout={handleLogout}
         />
         <main className="flex-1 p-4 bg-gray-50 overflow-auto">
-          
-         <Routes>
+          <Routes>
+            <Route
+              path="/change-password"
+              element={
+                <RequireAuth>
+                  <Profile currentUser={currentUser} />
+                </RequireAuth>
+              }
+            />
             <Route
               path="/apply"
-              element={<LeaveRequest onSubmit={addLeaveRequest}
-               currentUser={currentUser}  
-               userName={currentUser.name}        // add karo
-               department={currentUser.department} // add karo
-               role={currentUser.role}            // add karo
-               setActiveView={setActiveView}     // add karo, jo aapke component me ho
-               allRequests={leaveRequests}  />}
+              element={
+                <LeaveRequest
+                  onSubmit={addLeaveRequest}
+                  currentUser={currentUser}
+                  userName={currentUser.name}
+                  department={currentUser.department}
+                  role={currentUser.role}
+                  setActiveView={setActiveView}
+                  allRequests={leaveRequests}
+                />
+              }
             />
             <Route
               path="/history"
               element={
-                <History
-                
-                  leaveRequests={leaveRequests}
-                  currentUserId={currentUser.id}
-                 userRole={roleName || "employee"}
-                 onGoBack={() => {}}
-                />
+              <History
+  leaveRequests={leaveRequests}
+  currentUserId={currentUser.id}
+  userRole={roleName as "employee" | "hr" | "boss"}
+  onGoBack={() => {}}
+/>
+
               }
             />
             <Route
@@ -192,8 +223,32 @@ const App: React.FC = () => {
               path="/documentation"
               element={
                 <RequireAuth>
-                  {(roleName === "boss" || roleName === "hr"||roleName==="employee") ? (
+                  {roleName === "boss" || roleName === "hr" || roleName === "employee" ? (
                     <Documentation userRole={roleName} />
+                  ) : (
+                    <Navigate to="/apply" replace />
+                  )}
+                </RequireAuth>
+              }
+            />
+            <Route
+              path="/admin/users"
+              element={
+                <RequireAuth>
+                  {roleName === "hr" || roleName === "boss" ? (
+                    <UserManagement />
+                  ) : (
+                    <Navigate to="/apply" replace />
+                  )}
+                </RequireAuth>
+              }
+            />
+            <Route
+              path="/admin/user/add"
+              element={
+                <RequireAuth>
+                  {roleName === "hr" || roleName === "boss" ? (
+                    <UserManagement />
                   ) : (
                     <Navigate to="/apply" replace />
                   )}

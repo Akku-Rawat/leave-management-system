@@ -6,6 +6,8 @@ import Sidebar from "./components/Sidebar";
 
 import LeaveRequest from "./pages/LeaveRequest";
 import History from "./pages/History";
+import UserManagement from "./components/usermanagement"; // For user management  
+import Profile from "./components/profile";             // For change password
 
 import type { LeaveRequestType, LeaveRequestFormData, User } from "./Types";
 
@@ -106,6 +108,70 @@ const AppRoutes: React.FC<AppRoutesProps> = ({ currentUser, onLogout }) => {
             <Route path="/" element={<Navigate to="/apply" replace />} />
             <Route path="*" element={<div>Page Not Found</div>} />
           </Routes>
+          <Routes>
+  {/* Existing routes */}
+  <Route
+    path="/apply"
+    element={
+      <LeaveRequest
+        onSubmit={addLeaveRequest}
+        setActiveView={(view) => navigate(`/${view}`)}
+        userName={currentUser.name}
+        department={currentUser.department}
+        role={currentUser.role}
+        allRequests={leaveRequests}
+        initialStartDate={leaveFormStartDate}
+        initialEndDate={leaveFormEndDate}
+        currentUser={currentUser}
+      />
+    }
+  />
+  <Route
+    path="/history"
+    element={
+      <History
+        onGoBack={() => {}}
+        leaveRequests={leaveRequests}
+        currentUserId={currentUser.id}
+        userRole={typeof currentUser.role === "string" ? currentUser.role : currentUser.role.role_name}
+      />
+    }
+  />
+
+  {/* User Management Routes */}
+  <Route
+    path="/admin/users"
+    element={
+      (currentUser.role === "hr" || currentUser.role === "boss") ? (
+        <UserManagement />
+      ) : (
+        <Navigate to="/apply" replace />
+      )
+    }
+  />
+  <Route
+    path="/admin/user/add"
+    element={
+      (currentUser.role === "hr" || currentUser.role === "boss") ? (
+        <UserManagement />
+      ) : (
+        <Navigate to="/apply" replace />
+      )
+    }
+  />
+
+  {/* Change Password Route */}
+  <Route
+    path="/change-password"
+    element={
+      <Profile currentUser={currentUser} />
+    }
+  />
+
+  <Route path="/" element={<Navigate to="/apply" replace />} />
+  <Route path="*" element={<div>Page Not Found</div>} />
+</Routes>
+
         </main>
       </div>
     </div>

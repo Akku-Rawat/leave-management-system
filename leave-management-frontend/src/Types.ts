@@ -73,8 +73,9 @@ export interface LeaveRequestProps {
 export interface HistoryProps {
   leaveRequests: LeaveRequestType[];
   currentUserId: string;
-  userRole: string;
+  userRole: "employee" | "hr" | "boss";
 }
+
 
 
 export interface LoginPageProps {

@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from "react";
 import type { User } from "../Types";
 import { FaUpload } from "react-icons/fa";
+import { changePassword } from "../services/api";
 
 interface ProfileProps {
   currentUser: User;
@@ -36,6 +37,7 @@ const Profile: React.FC<ProfileProps> = ({ currentUser }) => {
     e.preventDefault();
     setMessage(null);
     setError(null);
+
     if (!oldPassword || !newPassword || !confirmPassword) {
       setError("Please fill in all required fields.");
       return;
@@ -48,12 +50,18 @@ const Profile: React.FC<ProfileProps> = ({ currentUser }) => {
       setError("New password must be at least 8 characters.");
       return;
     }
+
     setLoading(true);
-    await new Promise((r) => setTimeout(r, 1500));
-    setMessage("Password updated successfully.");
-    setOldPassword("");
-    setNewPassword("");
-    setConfirmPassword("");
+    try {
+      const token = localStorage.getItem("token") ?? undefined;
+      await changePassword(oldPassword, newPassword, token);
+      setMessage("Password updated successfully.");
+      setOldPassword("");
+      setNewPassword("");
+      setConfirmPassword("");
+    } catch (err: any) {
+      setError(err.message || "Failed to update password.");
+    }
     setLoading(false);
   };
 
@@ -62,7 +70,9 @@ const Profile: React.FC<ProfileProps> = ({ currentUser }) => {
 
   return (
     <div className="max-w-6xl mx-auto mt-12 bg-white rounded-2xl shadow-lg overflow-hidden">
-      <h1 className="text-3xl font-semibold text-gray-900 px-8 py-5 border-b border-gray-300">Your Profile</h1>
+      <h1 className="text-3xl font-semibold text-gray-900 px-8 py-5 border-b border-gray-300">
+        Your Profile
+      </h1>
 
       {/* Tabs */}
       <div className="flex border-b border-gray-300 text-gray-700 font-semibold text-sm">
@@ -95,7 +105,6 @@ const Profile: React.FC<ProfileProps> = ({ currentUser }) => {
               )}
             </div>
 
-            {/* Professional upload button */}
             <label
               htmlFor="avatar-upload"
               className="mt-5 flex cursor-pointer items-center gap-2 rounded-md border border-blue-600 px-4 py-2 text-blue-600 font-semibold hover:bg-blue-50"
@@ -112,13 +121,15 @@ const Profile: React.FC<ProfileProps> = ({ currentUser }) => {
 
           <section className="flex-1 grid grid-cols-1 sm:grid-cols-2 gap-10 text-gray-700 text-lg">
             <div>
-              <h2 className="text-2xl font-semibold text-gray-900 mb-6 border-b border-gray-300 pb-2">Personal Information</h2>
+              <h2 className="text-2xl font-semibold text-gray-900 mb-6 border-b border-gray-300 pb-2">
+                Personal Information
+              </h2>
               <dl className="space-y-6">
                 <div className="flex justify-between">
                   <dt className="font-semibold text-gray-800">Email</dt>
                   <dd className="text-right">{currentUser.email || "N/A"}</dd>
                 </div>
-                
+
                 <div className="flex justify-between">
                   <dt className="font-semibold text-gray-800">User ID</dt>
                   <dd className="text-right">{currentUser.id}</dd>
@@ -133,25 +144,31 @@ const Profile: React.FC<ProfileProps> = ({ currentUser }) => {
         </div>
       )}
 
-      {/* Privacy tab */}
+      {/* Privacy tab (Change Password) */}
       {activeTab === "privacy" && (
         <section className="max-w-lg mx-auto mt-6 p-8 rounded-lg shadow-md border border-gray-200">
-          <h2 className="text-2xl font-semibold text-gray-900 mb-6 text-center border-b border-gray-300 pb-3">Change Password</h2>
+          <h2 className="text-2xl font-semibold text-gray-900 mb-6 text-center border-b border-gray-300 pb-3">
+            Change Password
+          </h2>
           <form onSubmit={handleChangePassword} className="space-y-6">
             <div>
-              <label htmlFor="oldPassword" className="block text-gray-700 font-semibold mb-2">Current Password</label>
-              <input
-                id="oldPassword"
-                type="password"
-                value={oldPassword}
-                onChange={(e) => setOldPassword(e.target.value)}
-                placeholder="Enter current password"
-                required
-                className="w-full border border-gray-300 rounded-md px-4 py-2 focus:ring-2 focus:ring-blue-600 focus:outline-none"
-              />
-            </div>
+             <label htmlFor="oldPassword" className="block text-gray-700 font-semibold mb-2">
+               Current Password
+             </label>
+             <input
+               id="oldPassword"
+               type="password"
+               value={oldPassword}
+               onChange={(e) => setOldPassword(e.target.value)}
+               placeholder="Enter current password"
+               required
+               className="w-full border border-gray-300 rounded-md px-4 py-2 focus:ring-2 focus:ring-blue-600 focus:outline-none"
+             />
+           </div>
             <div>
-              <label htmlFor="newPassword" className="block text-gray-700 font-semibold mb-2">New Password</label>
+              <label htmlFor="newPassword" className="block text-gray-700 font-semibold mb-2">
+                New Password
+              </label>
               <input
                 id="newPassword"
                 type="password"
@@ -163,7 +180,9 @@ const Profile: React.FC<ProfileProps> = ({ currentUser }) => {
               />
             </div>
             <div>
-              <label htmlFor="confirmPassword" className="block text-gray-700 font-semibold mb-2">Confirm Password</label>
+              <label htmlFor="confirmPassword" className="block text-gray-700 font-semibold mb-2">
+                Confirm Password
+              </label>
               <input
                 id="confirmPassword"
                 type="password"
@@ -190,7 +209,9 @@ const Profile: React.FC<ProfileProps> = ({ currentUser }) => {
       {/* Documents tab */}
       {activeTab === "documents" && (
         <section className="max-w-4xl mx-auto mt-10 p-10 rounded-lg shadow-md border border-gray-200">
-          <h2 className="text-2xl font-semibold text-gray-900 mb-6 text-center border-b border-gray-300 pb-3">Documents</h2>
+          <h2 className="text-2xl font-semibold text-gray-900 mb-6 text-center border-b border-gray-300 pb-3">
+            Documents
+          </h2>
           <p className="text-gray-700 text-lg text-center">Your uploaded documents will appear here.</p>
         </section>
       )}

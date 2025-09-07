@@ -267,3 +267,74 @@ export async function encashLeaves(
   if (!res.ok) throw new Error("Failed to submit encashment");
   return res.json();
 }
+
+export async function addUser(
+  name: string,
+  email: string,
+  password: string,
+  role_id: number,
+  token?: string
+) {
+  const res = await fetch(`${API_URL}/api/user/add`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      ...(token ? { Authorization: `Bearer ${token}` } : {}),
+    },
+    body: JSON.stringify({ name, email, password, role_id }),
+  });
+  if (!res.ok) throw new Error("Failed to add user");
+  return res.json();
+}
+
+export async function changePassword(
+  currentPassword: string,
+  newPassword: string,
+  token?: string
+) {
+  const res = await fetch(`${API_URL}/api/user/change-password`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      ...(token ? { Authorization: `Bearer ${token}` } : {}),
+    },
+    body: JSON.stringify({ currentPassword, newPassword }),
+  });
+  if (!res.ok) throw new Error("Failed to change password");
+  return res.json();
+}
+
+// Update existing user
+export async function updateUser(
+  userId: string,
+  name: string,
+  email: string,
+  department: string,
+  role: "Employee" | "HR" | "Boss",
+  token?: string
+) {
+  const API_URL = import.meta.env.VITE_API_URL;
+  const res = await fetch(`${API_URL}/api/user/${userId}`, {  // Adjust endpoint as needed
+    method: "PUT",
+    headers: {
+      "Content-Type": "application/json",
+      ...(token ? { Authorization: `Bearer ${token}` } : {}),
+    },
+    body: JSON.stringify({ name, email, department, role }),
+  });
+  if (!res.ok) throw new Error("Failed to update user");
+  return res.json();
+}
+
+// Delete a user
+export async function deleteUser(userId: string, token?: string) {
+  const API_URL = import.meta.env.VITE_API_URL;
+  const res = await fetch(`${API_URL}/api/user/${userId}`, {  // Adjust endpoint as needed
+    method: "DELETE",
+    headers: {
+      ...(token ? { Authorization: `Bearer ${token}` } : {}),
+    },
+  });
+  if (!res.ok) throw new Error("Failed to delete user");
+  return res.json();
+}

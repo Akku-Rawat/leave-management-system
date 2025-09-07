@@ -1,9 +1,20 @@
-import { useState } from "react";
-import { FaPlus, FaEdit, FaTrash,FaHistory } from "react-icons/fa";
+import React, { useState, useEffect } from "react";
+import { FaPlus, FaEdit, FaTrash, FaHistory } from "react-icons/fa";
+import { getUserList, addUser, updateUser, deleteUser } from "../services/api";
 
 interface User {
   id: string;
   name: string;
+  email: string;
+  department: string;
+  role: "Employee" | "HR" | "Boss";
+}
+
+// Separate interface for form data including password
+interface UserForm {
+  name: string;
+  email: string;
+  password: string;
   department: string;
   role: "Employee" | "HR" | "Boss";
 }
@@ -16,95 +27,148 @@ interface AuditEntry {
   date: string;
 }
 
-const initialUsers: User[] = [
-  { id: "E001", name: "Ramesh Kumar", department: "Engineering", role: "Employee" },
-  { id: "E002", name: "Suresh Patel", department: "Finance", role: "Employee" },
-];
-
-const initialAudit: AuditEntry[] = [
-  { id: "A001", action: "Added", userName: "Aman Singh", by: "Boss", date: "2025-08-28" },
-];
-
-export default function UserManagement() {
-  const [users, setUsers] = useState<User[]>(initialUsers);
-  const [audit, setAudit] = useState<AuditEntry[]>(initialAudit);
-
-  const [searchTerm, setSearchTerm] = useState("");
+const UserManagement: React.FC = () => {
+  const [users, setUsers] = useState<User[]>([]);
+  const [audit, setAudit] = useState<AuditEntry[]>([]);
+  const [searchTerm, setSearchTerm] = useState<string>("");
   const [editingUser, setEditingUser] = useState<User | null>(null);
-  const [form, setForm] = useState({ name: "", department: "", role: "Employee" as User["role"] });
+  const [form, setForm] = useState<UserForm>({
+    name: "",
+    email: "",
+    password: "",
+    department: "",
+    role: "Employee",
+  });
   const [error, setError] = useState<string | null>(null);
+  const [loading, setLoading] = useState<boolean>(false);
+  const [currentUserName] = useState<string>("Admin"); // Replace as needed
 
-  // Filtered users by search term
+  // Fetch user list from backend on component mount
+  useEffect(() => {
+    async function fetchUsers() {
+      try {
+        const token = localStorage.getItem("token") ?? undefined;
+        const userList = await getUserList(token);
+        setUsers(userList);
+      } catch {
+        setError("Failed to fetch users.");
+      }
+    }
+    fetchUsers();
+  }, []);
+
+  // Filter users by search term
   const filteredUsers = users.filter(
-    u =>
+    (u) =>
       u.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
       u.department.toLowerCase().includes(searchTerm.toLowerCase()) ||
       u.role.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
+  // Add new audit entry
   const addAuditEntry = (action: AuditEntry["action"], userName: string) => {
     const newEntry: AuditEntry = {
       id: `A${(audit.length + 1).toString().padStart(3, "0")}`,
       action,
       userName,
-      by: "Admin", // Hardcoded for demo, replace with current user
+      by: currentUserName,
       date: new Date().toISOString().slice(0, 10),
     };
-    setAudit([newEntry, ...audit]);
+    setAudit((prev) => [newEntry, ...prev]);
   };
 
+  // Reset form to initial state
   const resetForm = () => {
-    setForm({ name: "", department: "", role: "Employee" });
+    setForm({
+      name: "",
+      email: "",
+      password: "",
+      department: "",
+      role: "Employee",
+    });
     setEditingUser(null);
     setError(null);
   };
 
+  // Start to add user form
   const startAddUser = () => {
     resetForm();
-    setEditingUser({ id: "", name: "", department: "", role: "Employee" });
+    setEditingUser(null);
   };
 
+  // Start to edit existing user
   const startEditUser = (user: User) => {
     setEditingUser(user);
-    setForm({ name: user.name, department: user.department, role: user.role });
+    setForm({
+      name: user.name,
+      email: user.email,
+      password: "", // password not editable during edit
+      department: user.department,
+      role: user.role,
+    });
     setError(null);
   };
 
+  // Form validation
   const validateForm = () => {
     if (!form.name.trim()) return "Name is required";
+    if (!form.email.trim()) return "Email is required";
     if (!form.department.trim()) return "Department is required";
     if (!form.role.trim()) return "Role is required";
+    if (!editingUser && !form.password.trim()) return "Password is required for new user";
     return null;
   };
 
-  const saveUser = () => {
+  // Save user (add or update)
+  const saveUser = async () => {
     const validationError = validateForm();
     if (validationError) {
       setError(validationError);
       return;
     }
-
-    if (editingUser) {
-      if (editingUser.id) {
-        // Update existing user
-        setUsers(users.map(u => u.id === editingUser.id ? {...u, ...form} : u));
-        addAuditEntry("Updated", form.name);
+    setLoading(true);
+    const token = localStorage.getItem("token") ?? undefined;
+    try {
+      if (editingUser) {
+        if (editingUser.id) {
+          // Update user
+          await updateUser(editingUser.id, form.name, form.email, form.department, form.role, token);
+          setUsers((prev) =>
+            prev.map((u) => (u.id === editingUser.id ? { ...u, ...form, password: undefined } : u))
+          );
+          addAuditEntry("Updated", form.name);
+        }
       } else {
-        // Add new user, generate id
-        const newUser = { id: `E${(users.length + 1).toString().padStart(3, "0")}`, ...form };
-        setUsers([newUser, ...users]);
+        // Add new user
+        const role_id = form.role === "Boss" ? 3 : form.role === "HR" ? 2 : 1;
+        await addUser(form.name, form.email, form.password, role_id, token);
+        const updatedUsers = await getUserList(token);
+        setUsers(updatedUsers);
         addAuditEntry("Added", form.name);
       }
       resetForm();
+    } catch (e: any) {
+      setError(e.message || "Failed to save user");
     }
+    setLoading(false);
   };
 
-  const removeUser = (id: string) => {
-    const userToRemove = users.find(u => u.id === id);
+  // Remove user action
+  const removeUser = async (id: string) => {
+    const userToRemove = users.find((u) => u.id === id);
     if (!userToRemove) return;
     if (!window.confirm(`Remove user ${userToRemove.name}?`)) return;
-    setUsers(users.filter(u => u.id !== id));
-    addAuditEntry("Removed", userToRemove.name);
+
+    setLoading(true);
+    const token = localStorage.getItem("token") ?? undefined;
+    try {
+      await deleteUser(id, token); // You need to add this API in your api.ts
+      setUsers((prev) => prev.filter((u) => u.id !== id));
+      addAuditEntry("Removed", userToRemove.name);
+    } catch (e: any) {
+      setError(e.message || "Failed to remove user");
+    }
+    setLoading(false);
   };
 
   return (
@@ -117,19 +181,21 @@ export default function UserManagement() {
           placeholder="Search users"
           className="flex-grow border border-gray-300 rounded px-3 py-2"
           value={searchTerm}
-          onChange={e => setSearchTerm(e.target.value)}
+          onChange={(e) => setSearchTerm(e.target.value)}
+          disabled={loading}
         />
         <button
           onClick={startAddUser}
           className="flex items-center gap-2 bg-green-600 px-4 py-2 rounded text-white hover:bg-green-700"
+          disabled={loading}
         >
           <FaPlus /> Add User
         </button>
       </div>
 
-      {(editingUser) && (
+      {editingUser !== null || (!editingUser && form.name !== "") ? (
         <div className="mb-6 p-4 border border-gray-300 rounded shadow">
-          <h3 className="text-xl font-semibold mb-3">{editingUser.id ? "Edit User" : "Add User"}</h3>
+          <h3 className="text-xl font-semibold mb-3">{editingUser ? "Edit User" : "Add User"}</h3>
           {error && <p className="mb-3 text-red-600">{error}</p>}
           <div className="space-y-3 max-w-md">
             <input
@@ -137,19 +203,41 @@ export default function UserManagement() {
               placeholder="Name"
               className="w-full border border-gray-300 rounded px-3 py-2"
               value={form.name}
-              onChange={e => setForm({...form, name: e.target.value})}
+              onChange={(e) => setForm({ ...form, name: e.target.value })}
+              disabled={loading}
             />
+            <input
+              type="email"
+              placeholder="Email"
+              className="w-full border border-gray-300 rounded px-3 py-2"
+              value={form.email}
+              onChange={(e) => setForm({ ...form, email: e.target.value })}
+              disabled={loading || Boolean(editingUser)}
+              title={editingUser ? "Cannot edit email" : undefined}
+            />
+            {!editingUser && (
+              <input
+                type="password"
+                placeholder="Password"
+                className="w-full border border-gray-300 rounded px-3 py-2"
+                value={form.password}
+                onChange={(e) => setForm({ ...form, password: e.target.value })}
+                disabled={loading}
+              />
+            )}
             <input
               type="text"
               placeholder="Department"
               className="w-full border border-gray-300 rounded px-3 py-2"
               value={form.department}
-              onChange={e => setForm({...form, department: e.target.value})}
+              onChange={(e) => setForm({ ...form, department: e.target.value })}
+              disabled={loading}
             />
             <select
               className="w-full border border-gray-300 rounded px-3 py-2"
               value={form.role}
-              onChange={e => setForm({...form, role: e.target.value as User["role"]})}
+              onChange={(e) => setForm({ ...form, role: e.target.value as User["role"] })}
+              disabled={loading}
             >
               <option value="Employee">Employee</option>
               <option value="HR">HR</option>
@@ -159,19 +247,21 @@ export default function UserManagement() {
               <button
                 onClick={saveUser}
                 className="bg-blue-600 hover:bg-blue-700 px-4 py-2 rounded text-white"
+                disabled={loading}
               >
-                Save
+                {loading ? "Saving..." : "Save"}
               </button>
               <button
                 onClick={resetForm}
                 className="bg-gray-300 hover:bg-gray-400 px-4 py-2 rounded"
+                disabled={loading}
               >
                 Cancel
               </button>
             </div>
           </div>
         </div>
-      )}
+      ) : null}
 
       <div className="overflow-auto max-h-[300px] border border-gray-300 rounded shadow-inner">
         <table className="w-full border-collapse">
@@ -179,6 +269,7 @@ export default function UserManagement() {
             <tr>
               <th className="border-b border-gray-300 px-4 py-2 text-left">ID</th>
               <th className="border-b border-gray-300 px-4 py-2 text-left">Name</th>
+              <th className="border-b border-gray-300 px-4 py-2 text-left">Email</th>
               <th className="border-b border-gray-300 px-4 py-2 text-left">Department</th>
               <th className="border-b border-gray-300 px-4 py-2 text-left">Role</th>
               <th className="border-b border-gray-300 px-4 py-2 text-left">Actions</th>
@@ -187,15 +278,16 @@ export default function UserManagement() {
           <tbody>
             {filteredUsers.length === 0 ? (
               <tr>
-                <td colSpan={5} className="text-center p-4 text-gray-500">
+                <td colSpan={6} className="text-center p-4 text-gray-500">
                   No users found.
                 </td>
               </tr>
             ) : (
-              filteredUsers.map(user => (
+              filteredUsers.map((user) => (
                 <tr key={user.id} className="hover:bg-gray-50">
                   <td className="border-b border-gray-300 px-4 py-2">{user.id}</td>
                   <td className="border-b border-gray-300 px-4 py-2">{user.name}</td>
+                  <td className="border-b border-gray-300 px-4 py-2">{user.email}</td>
                   <td className="border-b border-gray-300 px-4 py-2">{user.department}</td>
                   <td className="border-b border-gray-300 px-4 py-2">{user.role}</td>
                   <td className="border-b border-gray-300 px-4 py-2">
@@ -203,6 +295,7 @@ export default function UserManagement() {
                       onClick={() => startEditUser(user)}
                       className="text-blue-600 hover:underline mr-4"
                       title="Edit user"
+                      disabled={loading}
                     >
                       <FaEdit />
                     </button>
@@ -210,6 +303,7 @@ export default function UserManagement() {
                       onClick={() => removeUser(user.id)}
                       className="text-red-600 hover:underline"
                       title="Remove user"
+                      disabled={loading}
                     >
                       <FaTrash />
                     </button>
@@ -229,7 +323,7 @@ export default function UserManagement() {
           <p className="text-gray-500">No audit entries.</p>
         ) : (
           <ul className="space-y-1 max-h-[160px] overflow-auto text-sm text-gray-700">
-            {audit.map(entry => (
+            {audit.map((entry) => (
               <li key={entry.id}>
                 [{entry.date}] <strong>{entry.by}</strong> {entry.action} <strong>{entry.userName}</strong>
               </li>
@@ -239,4 +333,6 @@ export default function UserManagement() {
       </div>
     </div>
   );
-}
+};
+
+export default UserManagement;
