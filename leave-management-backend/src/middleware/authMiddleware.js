@@ -7,7 +7,7 @@ export const authMiddleware = async (req, res, next) => {
   if (!authHeader || !authHeader.startsWith('Bearer ')) {
     return res.status(401).json({ error: 'Authorization token missing' });
   }
-
+//ok
   const token = authHeader.split(' ')[1];
 
   try {
