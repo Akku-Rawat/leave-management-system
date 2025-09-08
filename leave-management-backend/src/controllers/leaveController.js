@@ -215,34 +215,7 @@ export const withdrawLeaveRequest = async (req, res) => {
   }
 };
 
-export const sendCustomLeaveMessage = async (req, res) => {
-  try {
-    const leaveId = parseInt(req.params.id);
-    const { message } = req.body;
-    const actionBy = req.user.user_id;
 
-    if (!message || message.trim() === "") {
-      return res.status(400).json({ error: "Message is required." });
-    }
-
-    // Save message as a LeaveAction with 'custom_message' status
-    await prisma.leaveAction.create({
-      data: {
-        leave_id: leaveId,
-        action_by: actionBy,
-        action: "custom_message",  // custom status
-        remarks: message,
-      },
-    });
-
-    // Optional: Send notification email to employee here
-
-    return res.json({ success: true, message: "Custom message sent to employee." });
-
-  } catch (error) {
-    return res.status(500).json({ error: error.message });
-  }
-};
 
 
 export const getRemainingLeaves = async (req, res) => {
@@ -269,3 +242,47 @@ export const submitEncashment = async (req, res) => {
   }
 };
 
+
+
+export const sendCustomLeaveMessage = async (req, res) => {
+  try {
+    const leaveId = parseInt(req.params.id);
+    const { message } = req.body;
+    const actionBy = req.user.user_id;
+
+    if (!message || message.trim() === "") {
+      return res.status(400).json({ error: "Message is required." });
+    }
+
+    // Save message as a LeaveAction with 'custom_message' status
+    await prisma.leaveAction.create({
+      data: {
+        leave_id: leaveId,
+        action_by: actionBy,
+        action: "custom_message",
+        remarks: message,
+      },
+    });
+
+    // Find the employee user who owns this leave
+    const leave = await prisma.leaveRequest.findUnique({
+      where: { leave_id: leaveId },
+    });
+
+    // Create a notification for that user
+    if (leave) {
+      await prisma.notification.create({
+        data: {
+          user_id: leave.user_id, // employee receiving notification
+          message: `HR sent you a message regarding your leave: ${message}`,
+          read: false,
+          time: new Date(),
+        },
+      });
+    }
+
+    return res.json({ success: true, message: "Custom message sent to employee." });
+  } catch (error) {
+    return res.status(500).json({ error: error.message });
+  }
+};

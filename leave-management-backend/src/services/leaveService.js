@@ -179,3 +179,18 @@ export const processLeaveEncashment = async (userId, action) => {
     return { message: "Leaves carried forward successfully" };
   }
 };
+
+
+export const createLeaveMessageNotification = async (leaveId, message) => {
+  const leave = await prisma.leaveRequest.findUnique({ where: { leave_id: leaveId } });
+  if (!leave) throw new Error("Leave not found");
+
+  return prisma.notification.create({
+    data: {
+      user_id: leave.user_id,
+      message: `HR sent you a message regarding your leave: ${message}`,
+      read: false,
+      time: new Date(),
+    },
+  });
+};
