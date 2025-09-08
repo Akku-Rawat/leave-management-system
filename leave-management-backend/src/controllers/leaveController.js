@@ -2,7 +2,7 @@ import { applyLeave, updateLeaveStatus } from "../services/leaveService.js";
 import prisma from "../../prisma/client.js";
 import jwt from 'jsonwebtoken';
 import { withdrawLeave ,getRemainingLeaveBalance,processLeaveEncashment } from '../services/leaveService.js';
-import { sendCustomMessageEmail } from './emailService.js';
+import { sendCustomMessageEmail } from '../services/emailService.js';
 
 // Leave Request Create
 export const createLeave = async (req, res) => {
