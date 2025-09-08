@@ -126,3 +126,33 @@ export const getUserList = async (req, res) => {
     res.status(500).json({ error: "Failed to fetch users" });
   }
 };
+
+
+export const deleteUserById = async (req, res) => {
+  const userId = parseInt(req.params.id);
+
+  try {
+    await prisma.user.delete({ where: { user_id: userId } });
+    res.json({ message: "User deleted successfully" });
+  } catch (error) {
+    res.status(500).json({ error: "Failed to delete user" });
+  }
+};
+
+
+export const updateUser = async (req, res) => {
+  const userId = parseInt(req.params.id);
+  const { name, email, department, role } = req.body;
+
+  try {
+    // Update user details, excluding password
+    const updatedUser = await prisma.user.update({
+      where: { user_id: userId },
+      data: { name, email, department, role },
+    });
+
+    res.json({ message: "User updated successfully", user: updatedUser });
+  } catch (error) {
+    res.status(500).json({ error: "Failed to update user" });
+  }
+};

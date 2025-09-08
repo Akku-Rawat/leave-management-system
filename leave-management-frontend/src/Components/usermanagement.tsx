@@ -32,6 +32,8 @@ const UserManagement: React.FC = () => {
   const [audit, setAudit] = useState<AuditEntry[]>([]);
   const [searchTerm, setSearchTerm] = useState<string>("");
   const [editingUser, setEditingUser] = useState<User | null>(null);
+  const [showAddUserForm, setShowAddUserForm] = useState(false);
+
   const [form, setForm] = useState<UserForm>({
     name: "",
     email: "",
@@ -49,7 +51,15 @@ const UserManagement: React.FC = () => {
       try {
         const token = localStorage.getItem("token") ?? undefined;
         const userList = await getUserList(token);
-        setUsers(userList);
+        // Normalize user data to ensure role is string and id field
+        const normalizedUsers = userList.map((u: any) => ({
+          id: u.user_id,
+          name: u.name,
+          email: u.email,
+          department: u.department || "",
+          role: typeof u.role === "string" ? u.role : u.role.role_name,
+        }));
+        setUsers(normalizedUsers);
       } catch {
         setError("Failed to fetch users.");
       }
@@ -94,6 +104,7 @@ const UserManagement: React.FC = () => {
   const startAddUser = () => {
     resetForm();
     setEditingUser(null);
+    setShowAddUserForm(true);
   };
 
   // Start to edit existing user
@@ -106,6 +117,7 @@ const UserManagement: React.FC = () => {
       department: user.department,
       role: user.role,
     });
+    setShowAddUserForm(true);
     setError(null);
   };
 
@@ -143,10 +155,19 @@ const UserManagement: React.FC = () => {
         const role_id = form.role === "Boss" ? 3 : form.role === "HR" ? 2 : 1;
         await addUser(form.name, form.email, form.password, role_id, token);
         const updatedUsers = await getUserList(token);
-        setUsers(updatedUsers);
+        // normalize as before
+        const normalizedUsers = updatedUsers.map((u: any) => ({
+          id: u.user_id,
+          name: u.name,
+          email: u.email,
+          department: u.department || "",
+          role: typeof u.role === "string" ? u.role : u.role.role_name,
+        }));
+        setUsers(normalizedUsers);
         addAuditEntry("Added", form.name);
       }
       resetForm();
+      setShowAddUserForm(false);
     } catch (e: any) {
       setError(e.message || "Failed to save user");
     }
@@ -162,7 +183,7 @@ const UserManagement: React.FC = () => {
     setLoading(true);
     const token = localStorage.getItem("token") ?? undefined;
     try {
-      await deleteUser(id, token); // You need to add this API in your api.ts
+      await deleteUser(id, token);
       setUsers((prev) => prev.filter((u) => u.id !== id));
       addAuditEntry("Removed", userToRemove.name);
     } catch (e: any) {
@@ -172,7 +193,7 @@ const UserManagement: React.FC = () => {
   };
 
   return (
-    <div className="p-6 max-w-5xl mx-auto space-y-8 bg-white rounded shadow-lg">
+    <div className="p-6 max-w-5xl mx-auto space-y-8 bg-white rounded shadow-lg relative">
       <h2 className="text-3xl font-bold">User Management</h2>
 
       <div className="flex gap-4 mb-4">
@@ -193,15 +214,15 @@ const UserManagement: React.FC = () => {
         </button>
       </div>
 
-      {editingUser !== null || (!editingUser && form.name !== "") ? (
-        <div className="mb-6 p-4 border border-gray-300 rounded shadow">
-          <h3 className="text-xl font-semibold mb-3">{editingUser ? "Edit User" : "Add User"}</h3>
-          {error && <p className="mb-3 text-red-600">{error}</p>}
-          <div className="space-y-3 max-w-md">
+      {showAddUserForm && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50">
+          <div className="bg-white rounded shadow-lg p-8 w-full max-w-md relative">
+            <h3 className="text-xl font-semibold mb-3">{editingUser ? "Edit User" : "Add User"}</h3>
+            {error && <p className="mb-3 text-red-600">{error}</p>}
             <input
               type="text"
               placeholder="Name"
-              className="w-full border border-gray-300 rounded px-3 py-2"
+              className="w-full border border-gray-300 rounded px-3 py-2 mb-2"
               value={form.name}
               onChange={(e) => setForm({ ...form, name: e.target.value })}
               disabled={loading}
@@ -209,7 +230,7 @@ const UserManagement: React.FC = () => {
             <input
               type="email"
               placeholder="Email"
-              className="w-full border border-gray-300 rounded px-3 py-2"
+              className="w-full border border-gray-300 rounded px-3 py-2 mb-2"
               value={form.email}
               onChange={(e) => setForm({ ...form, email: e.target.value })}
               disabled={loading || Boolean(editingUser)}
@@ -219,7 +240,7 @@ const UserManagement: React.FC = () => {
               <input
                 type="password"
                 placeholder="Password"
-                className="w-full border border-gray-300 rounded px-3 py-2"
+                className="w-full border border-gray-300 rounded px-3 py-2 mb-2"
                 value={form.password}
                 onChange={(e) => setForm({ ...form, password: e.target.value })}
                 disabled={loading}
@@ -228,13 +249,13 @@ const UserManagement: React.FC = () => {
             <input
               type="text"
               placeholder="Department"
-              className="w-full border border-gray-300 rounded px-3 py-2"
+              className="w-full border border-gray-300 rounded px-3 py-2 mb-2"
               value={form.department}
               onChange={(e) => setForm({ ...form, department: e.target.value })}
               disabled={loading}
             />
             <select
-              className="w-full border border-gray-300 rounded px-3 py-2"
+              className="w-full border border-gray-300 rounded px-3 py-2 mb-4"
               value={form.role}
               onChange={(e) => setForm({ ...form, role: e.target.value as User["role"] })}
               disabled={loading}
@@ -252,7 +273,7 @@ const UserManagement: React.FC = () => {
                 {loading ? "Saving..." : "Save"}
               </button>
               <button
-                onClick={resetForm}
+                onClick={() => setShowAddUserForm(false)}
                 className="bg-gray-300 hover:bg-gray-400 px-4 py-2 rounded"
                 disabled={loading}
               >
@@ -261,7 +282,7 @@ const UserManagement: React.FC = () => {
             </div>
           </div>
         </div>
-      ) : null}
+      )}
 
       <div className="overflow-auto max-h-[300px] border border-gray-300 rounded shadow-inner">
         <table className="w-full border-collapse">
