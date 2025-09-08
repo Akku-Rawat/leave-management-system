@@ -5,7 +5,7 @@ import { getNotifications,markNotificationRead,getUnreadNotifications} from "../
 const router = express.Router();
 
 router.get("/", authMiddleware, getNotifications);
-router.post("/:id/mark-read", authMiddleware, markNotificationRead);
+router.patch("/:id/read", authMiddleware, markNotificationRead);
 router.get("/unread", authMiddleware, getUnreadNotifications);
 
 export default router;
