@@ -75,3 +75,11 @@ model LeaveAction {
   remarks   String?
   action_at DateTime     @default(now())
 }
+
+model Notification {
+  id        Int      @id @default(autoincrement())
+  user_id   Int
+  message   String
+  time      DateTime @default(now())
+  read      Boolean  @default(false)
+}

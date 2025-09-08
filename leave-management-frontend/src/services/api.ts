@@ -216,29 +216,14 @@ export async function getUserList(token?: string) {
 }
 
 // Notifications functions
-export async function getNotificationsType1(token?: string) {
-  const res = await fetch(`${API_URL}/notifications/type1`, {
+export async function getNotifications(token?: string) {
+  const res = await fetch(`${API_URL}/notifications`, {
     headers: token ? { Authorization: `Bearer ${token}` } : {},
   });
-  if (!res.ok) throw new Error("Failed to fetch type1 notifications");
+  if (!res.ok) throw new Error("Failed to fetch notifications");
   return res.json();
 }
 
-export async function getNotificationsType2(token?: string) {
-  const res = await fetch(`${API_URL}/notifications/type2`, {
-    headers: token ? { Authorization: `Bearer ${token}` } : {},
-  });
-  if (!res.ok) throw new Error("Failed to fetch type2 notifications");
-  return res.json();
-}
-
-export async function getNotificationsType3(token?: string) {
-  const res = await fetch(`${API_URL}/notifications/type3`, {
-    headers: token ? { Authorization: `Bearer ${token}` } : {},
-  });
-  if (!res.ok) throw new Error("Failed to fetch type3 notifications");
-  return res.json();
-}
 export async function markNotificationAsRead(notificationId: number, token?: string) {
   const res = await fetch(`${API_URL}/notifications/${notificationId}/read`, {
     method: "PATCH",

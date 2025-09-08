@@ -52,6 +52,15 @@ export const getUserStats = async (req, res) => {
   }
 };
 
+export const createNotification = async (userId, message) => {
+  return await prisma.notification.create({
+    data: {
+      user_id: userId,
+      message,
+    },
+  });
+};
+
 // Update leave status and adjust used leaves accordingly
 export const updateLeaveStatus = async (leave_id, status) => {
   if (!status) throw new Error("Status is required");
@@ -65,30 +74,42 @@ export const updateLeaveStatus = async (leave_id, status) => {
       data: { status: normalizedStatus },
     });
 
+    // Create notification message based on status
+    const messageMap = {
+      approved: `Your leave request from ${leave.start_date.toISOString().slice(0, 10)} to ${leave.end_date.toISOString().slice(0, 10)} has been approved.`,
+      rejected: `Your leave request from ${leave.start_date.toISOString().slice(0, 10)} to ${leave.end_date.toISOString().slice(0, 10)} has been rejected.`,
+      withdrawn: `Your leave request from ${leave.start_date.toISOString().slice(0, 10)} to ${leave.end_date.toISOString().slice(0, 10)} has been withdrawn.`,
+      // add others if necessary
+    };
+
+    if (messageMap[normalizedStatus]) {
+      await createNotification(leave.user_id, messageMap[normalizedStatus]);
+    }
+
     if (normalizedStatus === "approved" || normalizedStatus === "rejected") {
-      // Fetch all approved leaves for the user
+      // Calculate used leaves based on duration (number of days)
       const approvedLeaves = await prisma.leaveRequest.findMany({
         where: { user_id: leave.user_id, status: "approved" },
       });
 
-      // Calculate used leaves based on duration
       const usedLeaves = approvedLeaves.reduce((acc, leave) => {
-        // Count full day as 1, half day ("first" or "second") as 0.5
         if (leave.duration === "first" || leave.duration === "second") {
           return acc + 0.5;
         }
-        return acc + 1;
+        const start = new Date(leave.start_date);
+        const end = new Date(leave.end_date);
+        const days = Math.ceil((end.getTime() - start.getTime()) / (1000 * 60 * 60 * 24)) + 1;
+        return acc + days;
       }, 0);
 
-      // Update leave balance used_leaves with decimal values
+      // Update leave balance used_leaves
       await prisma.leaveBalance.updateMany({
         where: { user_id: leave.user_id },
         data: { used_leaves: usedLeaves },
       });
-
-      return leave;
     }
 
+    return leave;
   } catch (err) {
     console.error("Error in updateLeaveStatus:", err);
     if (err.code === "P2025") {
@@ -97,6 +118,7 @@ export const updateLeaveStatus = async (leave_id, status) => {
     throw err;
   }
 };
+
 
 // Withdraw leave request
 export const withdrawLeave = async (leave_id) => {

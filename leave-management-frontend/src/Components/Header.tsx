@@ -5,9 +5,7 @@ import { FaCog, FaBell, FaUserCircle } from "react-icons/fa";
 import {
   getUserInfo,
   getUserList,
-  getNotificationsType1,
-  getNotificationsType2,
-  getNotificationsType3,
+  getNotifications,
   markNotificationAsRead,
 } from "../services/api";
 
@@ -87,30 +85,25 @@ const Header: React.FC<HeaderProps> = ({ currentUser, onLogout, onNavigate }) =>
   const settingsRef = React.useRef<HTMLButtonElement | null>(null);
   const profileRef = React.useRef<HTMLButtonElement | null>(null);
 
-  // Reusable function to fetch & sort notifications newest-first
   const refreshNotifications = async () => {
     try {
       const token = localStorage.getItem("token") ?? undefined;
-      const [data1, data2, data3] = await Promise.all([
-        getNotificationsType1(token),
-        getNotificationsType2(token),
-        getNotificationsType3(token),
-      ]);
-      const combined = [...data1, ...data2, ...data3];
-      combined.sort((a, b) => new Date(b.time).getTime() - new Date(a.time).getTime());
-      setNotifications(combined);
+      const data = await getNotifications(token);
+      data.sort(
+  (a: { id: number; message: string; time: string }, b: { id: number; message: string; time: string }) =>
+    new Date(b.time).getTime() - new Date(a.time).getTime()
+);
+
     } catch (error) {
       console.error("Error fetching notifications:", error);
       setNotifications([]);
     }
   };
 
-  // Fetch notifications on mount
   useEffect(() => {
     refreshNotifications();
   }, []);
 
-  // Fetch full user info for profile dropdown
   useEffect(() => {
     async function fetchUserInfo() {
       try {
@@ -164,12 +157,10 @@ const Header: React.FC<HeaderProps> = ({ currentUser, onLogout, onNavigate }) =>
     }
   };
 
-  // Mark a notification as read and refresh the list
   const handleMarkAsRead = async (notificationId: number) => {
     try {
       const token = localStorage.getItem("token") ?? undefined;
       await markNotificationAsRead(notificationId, token);
-      // Remove locally for instant feedback
       setNotifications((prev) => prev.filter((notif) => notif.id !== notificationId));
     } catch (error) {
       console.error("Error marking notification as read:", error);
@@ -197,8 +188,7 @@ const Header: React.FC<HeaderProps> = ({ currentUser, onLogout, onNavigate }) =>
 
           <div className="flex-1" />
 
-          <div className="flex items-center space-x-6 relative right-0">
-            {/* Notifications */}
+          <div className="flex items-center space-x-6 relative right-[-55px]">
             <button
               ref={notifRef}
               onClick={() => {
@@ -240,7 +230,6 @@ const Header: React.FC<HeaderProps> = ({ currentUser, onLogout, onNavigate }) =>
               </DropdownPortal>
             )}
 
-            {/* Settings for HR and Boss roles */}
             {(currentUser.role === "hr" || currentUser.role === "boss") && (
               <>
                 <button
@@ -291,9 +280,7 @@ const Header: React.FC<HeaderProps> = ({ currentUser, onLogout, onNavigate }) =>
                             disabled={settingsLoading === "changePassword"}
                             className="w-full text-left px-4 py-2 hover:bg-gray-100 disabled:opacity-50"
                           >
-                            {settingsLoading === "changePassword"
-                              ? "Loading..."
-                              : "Change Password"}
+                            {settingsLoading === "changePassword" ? "Loading..." : "Change Password"}
                           </button>
                         </>
                       )}
@@ -304,18 +291,14 @@ const Header: React.FC<HeaderProps> = ({ currentUser, onLogout, onNavigate }) =>
                             disabled={settingsLoading === "delegation"}
                             className="w-full text-left px-4 py-2 hover:bg-gray-100 disabled:opacity-50"
                           >
-                            {settingsLoading === "delegation"
-                              ? "Loading..."
-                              : "Delegation Settings"}
+                            {settingsLoading === "delegation" ? "Loading..." : "Delegation Settings"}
                           </button>
                           <button
                             onClick={() => handleSettingsAction("config")}
                             disabled={settingsLoading === "config"}
                             className="w-full text-left px-4 py-2 hover:bg-gray-100 disabled:opacity-50"
                           >
-                            {settingsLoading === "config"
-                              ? "Loading..."
-                              : "System Configuration"}
+                            {settingsLoading === "config" ? "Loading..." : "System Configuration"}
                           </button>
                         </>
                       )}
@@ -325,7 +308,6 @@ const Header: React.FC<HeaderProps> = ({ currentUser, onLogout, onNavigate }) =>
               </>
             )}
 
-            {/* Profile dropdown */}
             <button
               ref={profileRef}
               onClick={() => setShowProfile((prev) => !prev)}
@@ -339,25 +321,17 @@ const Header: React.FC<HeaderProps> = ({ currentUser, onLogout, onNavigate }) =>
               <DropdownPortal anchorRef={profileRef} onClose={() => setShowProfile(false)}>
                 <div className="py-1">
                   <div className="px-4 py-2 border-b">
-                    <p className="text-sm font-medium text-gray-800">
-                      {userInfo ? userInfo.name : "Loading..."}
-                    </p>
+                    <p className="text-sm font-medium text-gray-800">{userInfo ? userInfo.name : "Loading..."}</p>
                     <p className="text-xs text-gray-500 capitalize">
-                      {userInfo ? ` ${userInfo.role} • ${userInfo.department} ` : ""}
+                      {userInfo
+                        ? `${typeof userInfo.role === "string"
+                            ? userInfo.role
+                            : userInfo.role?.role_name || ""} ${
+                            userInfo.department ? ` • ${userInfo.department}` : ""
+                          }`
+                        : ""}
                     </p>
                   </div>
-
-                  {(currentUser.role === "hr" || currentUser.role === "boss") && (
-                    <button
-                      onClick={() => {
-                        setShowProfile(false);
-                        onNavigate?.("/admin/users/add");
-                      }}
-                      className="w-full text-left px-4 py-2 hover:bg-gray-100"
-                    >
-                      Add User
-                    </button>
-                  )}
 
                   <button
                     onClick={() => {

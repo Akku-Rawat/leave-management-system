@@ -21,6 +21,7 @@ import { useNavigate } from "react-router-dom";
 import Skeleton from "react-loading-skeleton";
 import "react-loading-skeleton/dist/skeleton.css";
 
+
 interface HistoryProps {
   onGoBack: () => void;
   leaveRequests?: LeaveRequestType[];
@@ -29,11 +30,13 @@ interface HistoryProps {
   userRole: User["role"];
 }
 
+
 const History: React.FC<HistoryProps> = ({
   currentUserId = "currentUser",
   userRole = "employee"
 }: HistoryProps) => {
   const navigate = useNavigate();
+
 
   const [leaveRequests, setLeaveRequests] = useState<LeaveRequestType[]>([]);
   const [selectedYear, setSelectedYear] = useState("2025");
@@ -45,78 +48,91 @@ const History: React.FC<HistoryProps> = ({
   const [showAll, setShowAll] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
 
+
   useEffect(() => {
-    async function fetchLeaveRequests() {
-      setIsLoading(true);
-      try {
-        const token = localStorage.getItem("token") || undefined;
+   async function fetchLeaveRequests() {
+     setIsLoading(true);
+    try {
+      const token = localStorage.getItem("token") || undefined;
 
-        let data;
-        if (userRole === "employee") {
-          data = await getMyLeaves(token);
-        } else if (userRole === "hr") {
-          data = viewMode === "personal" ? await getMyLeaves(token) : await getAllLeaves(token);
-        } else if (userRole === "boss") {
-          data = await getAllLeaves(token);
-        }
 
-        const capitalizeFirstLetter = (s: string) =>
-          s.charAt(0).toUpperCase() + s.slice(1).toLowerCase();
-
-        const mappedData = data.map((item: any) => {
-          let appliedDate;
-          if (item.created_at && !isNaN(new Date(item.created_at).getTime())) {
-            const createdDate = new Date(item.created_at);
-            appliedDate = createdDate.toLocaleDateString("en-GB", {
-              timeZone: "Asia/Kolkata",
-              day: "2-digit",
-              month: "2-digit",
-              year: "numeric"
-            });
-          } else {
-            appliedDate = new Date().toLocaleDateString("en-GB");
-          }
-
-          return {
-            id: item.leave_id,
-            userId: item.user_id,
-            employeeId: item.user_id,
-            start_date: item.start_date,
-            end_date: item.end_date,
-            type: item.type,
-            reason: item.reason,
-            status: capitalizeFirstLetter(item.status),
-            employeeName: item.user?.name || "Unknown",
-            date: appliedDate,
-            createdAt: item.created_at,
-            days:
-              Math.ceil(
-                (new Date(item.end_date).getTime() - new Date(item.start_date).getTime()) /
-                  (1000 * 60 * 60 * 24)
-              ) + 1
-          };
-        });
-
-        if (userRole === "hr" && viewMode === "all") {
-          const onlyPending = mappedData.filter(
-            (item: any) => item.status.toLowerCase() === "pending"
-          );
-          setLeaveRequests(onlyPending);
-        } else {
-          setLeaveRequests(mappedData);
-        }
-      } catch (error) {
-        console.error("Error fetching leave requests:", error);
-        setLeaveRequests([]);
-      } finally {
-        setIsLoading(false);
+      let data;
+      if (userRole === "employee") {
+        data = await getMyLeaves(token);
+      } else if (userRole === "hr") {
+        data = viewMode === "personal" ? await getMyLeaves(token) : await getAllLeaves(token);
+      } else if (userRole === "boss") {
+        data = await getAllLeaves(token);
       }
+
+
+      const capitalizeFirstLetter = (s: string) =>
+        s.charAt(0).toUpperCase() + s.slice(1).toLowerCase();
+
+
+      const mappedData = data.map((item: any) => {
+        let appliedDate;
+        if (item.created_at && !isNaN(new Date(item.created_at).getTime())) {
+          const createdDate = new Date(item.created_at);
+          appliedDate = createdDate.toLocaleDateString("en-GB", {
+            timeZone: "Asia/Kolkata",
+            day: "2-digit",
+            month: "2-digit",
+            year: "numeric"
+          });
+        } else {
+          appliedDate = new Date().toLocaleDateString("en-GB");
+        }
+
+
+        return {
+          id: item.leave_id,
+          userId: item.user_id,
+          employeeId: item.user_id,
+          start_date: item.start_date,
+          end_date: item.end_date,
+          type: item.type,
+          reason: item.reason,
+          status: capitalizeFirstLetter(item.status), // To keep uniform case like "Approved"
+          employeeName: item.user?.name || "Unknown",
+          date: appliedDate,
+          created_at: item.created_at,
+          days:
+            Math.ceil(
+              (new Date(item.end_date).getTime() - new Date(item.start_date).getTime()) /
+                (1000 * 60 * 60 * 24)
+            ) + 1
+        };
+      });
+
+
+      if (userRole === "hr" && viewMode === "all") {
+        setLeaveRequests(mappedData); // No filter here
+      } else if (userRole === "hr" && viewMode === "personal") {
+        // Fix filter to use userId (key in mappedData is userId, not user_id)
+        const personalData = mappedData.filter((item: any) => item.userId === currentUserId);
+        setLeaveRequests(personalData);
+      } else {
+        setLeaveRequests(mappedData);
+      }
+
+
+
+    } catch (error) {
+      console.error("Error fetching leave requests:", error);
+      setLeaveRequests([]);
+    } finally {
+      setIsLoading(false);
     }
+  }
+
 
     fetchLeaveRequests();
   }, [currentUserId, userRole, viewMode]);
 
+
   const currentIdStr = String(currentUserId);
+
 
   const userFilteredRequests = useMemo(() => {
     return leaveRequests.filter((req) => {
@@ -137,11 +153,13 @@ const History: React.FC<HistoryProps> = ({
     });
   }, [leaveRequests, currentUserId, userRole, viewMode]);
 
+
   const analytics = useMemo(() => {
-    const approved = userFilteredRequests.filter((r) => r.status === "approved");
-    const pending = userFilteredRequests.filter((r) => r.status === "pending");
-    const rejected = userFilteredRequests.filter((r) => r.status === "rejected");
+    const approved = userFilteredRequests.filter((r) => r.status.toLowerCase() === "approved");
+    const pending = userFilteredRequests.filter((r) => r.status.toLowerCase() === "pending");
+    const rejected = userFilteredRequests.filter((r) => r.status.toLowerCase() === "rejected");
     const totalApprovedDays = approved.reduce((sum, req) => sum + req.days, 0);
+
 
     return {
       totalRequests: userFilteredRequests.length,
@@ -156,8 +174,10 @@ const History: React.FC<HistoryProps> = ({
     };
   }, [userFilteredRequests]);
 
+
   const filteredRequests = useMemo(() => {
     let filtered = userFilteredRequests;
+
 
     if (searchTerm) {
       filtered = filtered.filter(
@@ -168,19 +188,33 @@ const History: React.FC<HistoryProps> = ({
       );
     }
 
+
     if (statusFilter !== "All") {
-      filtered = filtered.filter((req) => req.status === statusFilter);
+      filtered = filtered.filter((req) => req.status.toLowerCase() === statusFilter.toLowerCase());
     }
+
 
     filtered = filtered.filter((req) => {
       const reqYear = new Date(req.date).getFullYear().toString();
       return reqYear === selectedYear;
     });
 
-    filtered = filtered.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
+
+    // Sorting logic based on sortBy select value
+    if (sortBy === "date-desc") {
+      filtered = filtered.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
+    } else if (sortBy === "date-asc") {
+      filtered = filtered.sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
+    } else if (sortBy === "status") {
+      filtered = filtered.sort((a, b) => a.status.localeCompare(b.status));
+    } else if (sortBy === "type") {
+      filtered = filtered.sort((a, b) => a.type.localeCompare(b.type));
+    }
+
 
     return showAll ? filtered : filtered.slice(0, 5);
   }, [userFilteredRequests, searchTerm, statusFilter, selectedYear, sortBy, showAll]);
+
 
   const getStatusConfig = (status: string) => {
     const configs = {
@@ -191,13 +225,16 @@ const History: React.FC<HistoryProps> = ({
     return configs[status as keyof typeof configs] || configs["pending"];
   };
 
+
   const formatDatePeriod = (start: string, end: string) => {
     const start_date = new Date(start);
     const end_date = new Date(end);
 
+
     if (isNaN(start_date.getTime()) || isNaN(end_date.getTime())) {
       return "Invalid Date";
     }
+
 
     return `${start_date.toLocaleDateString("en-GB", { day: "2-digit", month: "short" })} → ${end_date.toLocaleDateString(
       "en-GB",
@@ -205,12 +242,15 @@ const History: React.FC<HistoryProps> = ({
     )}`;
   };
 
+
   const getRelativeTime = (isoDateStr: string) => {
     const date = new Date(isoDateStr);
     if (isNaN(date.getTime())) return null;
 
+
     const now = new Date();
     const diffDays = Math.floor((now.getTime() - date.getTime()) / (1000 * 60 * 60 * 24));
+
 
     if (diffDays === 0) return "Today";
     if (diffDays === 1) return "Yesterday";
@@ -218,10 +258,12 @@ const History: React.FC<HistoryProps> = ({
     return `${Math.floor(diffDays / 30)} months ago`;
   };
 
+
   const handleViewDetails = (r: LeaveRequestType) => {
     setShowNotification(`Viewing ${r.type} details`);
     setTimeout(() => setShowNotification(null), 2000);
   };
+
 
   const handleWithdraw = async (r: LeaveRequestType) => {
     try {
@@ -236,11 +278,13 @@ const History: React.FC<HistoryProps> = ({
     }
   };
 
+
   const handleDuplicate = (r: LeaveRequestType) => {
     setShowNotification(`Duplicating ${r.type} request`);
     setTimeout(() => setShowNotification(null), 2000);
     navigate("/apply");
   };
+
 
   const handleExportData = () => {
     const csvContent =
@@ -254,6 +298,7 @@ const History: React.FC<HistoryProps> = ({
         )
         .join("\n");
 
+
     const encodedUri = encodeURI(csvContent);
     const link = document.createElement("a");
     link.setAttribute("href", encodedUri);
@@ -262,9 +307,11 @@ const History: React.FC<HistoryProps> = ({
     link.click();
     document.body.removeChild(link);
 
+
     setShowNotification("Data exported successfully!");
     setTimeout(() => setShowNotification(null), 2000);
   };
+
 
   useEffect(() => {
     const prevBodyOverflow = document.body.style.overflow;
@@ -277,9 +324,11 @@ const History: React.FC<HistoryProps> = ({
     };
   }, []);
 
+
   const handleNewRequestClick = () => {
     navigate("/apply");
   };
+
 
   return (
     <div className="bg-gray-50 h-full flex flex-col overflow-hidden">
@@ -288,6 +337,7 @@ const History: React.FC<HistoryProps> = ({
           {showNotification}
         </div>
       )}
+
 
       <div className="w-[1200px] flex-1 flex flex-col overflow-hidden items-center">
         {(userRole === "employee" || userRole === "hr") && (
@@ -303,6 +353,7 @@ const History: React.FC<HistoryProps> = ({
                     {viewMode === "personal" ? "Your personal leave history" : "All employee leave history"}
                   </p>
                 </div>
+
 
                 {userRole === "hr" && (
                   <div className="flex items-center bg-white bg-opacity-20 rounded-lg p-1">
@@ -331,6 +382,7 @@ const History: React.FC<HistoryProps> = ({
               </div>
             </div>
 
+
             <div className="p-4 border-b border-slate-100">
               <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-3">
                 <div className="flex items-center space-x-3">
@@ -344,6 +396,7 @@ const History: React.FC<HistoryProps> = ({
                     <option value="2023">2023</option>
                   </select>
 
+
                   <select
                     value={statusFilter}
                     onChange={(e) => setStatusFilter(e.target.value)}
@@ -354,6 +407,7 @@ const History: React.FC<HistoryProps> = ({
                     <option value="Approved">Approved</option>
                     <option value="Rejected">Rejected</option>
                   </select>
+
 
                   <select
                     value={sortBy}
@@ -367,6 +421,7 @@ const History: React.FC<HistoryProps> = ({
                   </select>
                 </div>
 
+
                 <div className="flex items-center gap-3">
                   <div className="relative">
                     <FaSearch className="absolute left-3 top-1/2 transform -translate-y-1/2 text-slate-400 w-3 h-3" />
@@ -378,6 +433,7 @@ const History: React.FC<HistoryProps> = ({
                       className="pl-9 pr-3 py-2 text-sm border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 w-40 bg-white"
                     />
                   </div>
+
 
                   {["hr", "boss"].includes(userRole) && (
                     <button
@@ -391,6 +447,7 @@ const History: React.FC<HistoryProps> = ({
                 </div>
               </div>
 
+
               <div className="mt-3 text-xs text-gray-600 flex items-center justify-between">
                 <span>
                   Showing {filteredRequests.length} of {userFilteredRequests.length} requests{" "}
@@ -401,6 +458,7 @@ const History: React.FC<HistoryProps> = ({
             </div>
           </div>
         )}
+
 
         {((userRole === "hr" && viewMode === "all") || userRole === "boss") && (
           <div className="bg-white rounded-2xl shadow-xl border border-slate-200 mt-4 w-[1100px]">
@@ -435,8 +493,12 @@ const History: React.FC<HistoryProps> = ({
                           acc[name] = { total: 0, approved: 0, pending: 0, rejected: 0, days: 0 };
                         }
                         acc[name].total += 1;
-                        acc[name][req.status] += 1;
-                        if (req.status === "approved") {
+                        // Convert req.status to lowercase to match keys.
+                        const statusKey = req.status.toLowerCase();
+                        if(statusKey === "approved" || statusKey === "pending" || statusKey === "rejected"){
+                          acc[name][statusKey] += 1;
+                        }
+                        if (statusKey === "approved") {
                           acc[name].days += req.days;
                         }
                         return acc;
@@ -462,6 +524,7 @@ const History: React.FC<HistoryProps> = ({
           </div>
         )}
 
+
         {(userRole === "employee" || (userRole === "hr" && viewMode === "personal")) && (
           <div className="bg-white rounded-2xl shadow-xl border border-slate-200 overflow-hidden w-[1100px] mt-4">
             <div className="px-4 py-3 border-b border-slate-100 flex items-center justify-between bg-gradient-to-r from-slate-50 to-slate-100">
@@ -484,14 +547,15 @@ const History: React.FC<HistoryProps> = ({
               </button>
             </div>
 
+
            <div className="p-4 h-[350px] overflow-auto">
- {isLoading ? (
+{isLoading ? (
   <div className="space-y-3 h-[700px]">
     {[...Array(5)].map((_, idx) => (
       <Skeleton key={idx} height={96} />
     ))}
   </div>
-  ) : filteredRequests.length === 0 ? (
+) : filteredRequests.length === 0 ? (
                 <div className="h-full flex items-center justify-center text-center">
                   <div>
                     <FaClipboardList className="w-16 h-16 text-slate-400 mx-auto mb-4" />
@@ -540,6 +604,7 @@ const History: React.FC<HistoryProps> = ({
                           <div className="text-xs text-slate-500">{getRelativeTime(req.created_at)}</div>
                         </div>
 
+
                         <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-3 text-xs">
                           <div className="flex items-center space-x-2">
                             <FaCalendarAlt className="w-3 h-3 text-slate-400" />
@@ -558,9 +623,9 @@ const History: React.FC<HistoryProps> = ({
                           <div className="text-right">
                             <span
                               className={`px-2 py-1 rounded-full text-xs font-medium ${
-                                req.status === "approved"
+                                req.status.toLowerCase() === "approved"
                                   ? "bg-green-100 text-green-700"
-                                  : req.status === "pending"
+                                  : req.status.toLowerCase() === "pending"
                                   ? "bg-yellow-100 text-yellow-700"
                                   : "bg-red-100 text-red-700"
                               }`}
@@ -570,11 +635,13 @@ const History: React.FC<HistoryProps> = ({
                           </div>
                         </div>
 
+
                         <div className="mb-3">
                           <p className="text-xs text-slate-600 italic bg-white rounded-lg p-3 border border-slate-200">
                             <strong>Reason:</strong> "{req.reason}"
                           </p>
                         </div>
+
 
                         <div className="flex items-center gap-2">
                           <button
@@ -594,6 +661,7 @@ const History: React.FC<HistoryProps> = ({
                             </button>
                           )}
 
+
                           {req.status.toLowerCase() === "approved" && (
                             <button
                               onClick={() => handleDuplicate(req)}
@@ -607,6 +675,7 @@ const History: React.FC<HistoryProps> = ({
                       </div>
                     );
                   })}
+
 
                   {!showAll && userFilteredRequests.length > 5 && (
                     <div className="text-center py-3">
@@ -637,5 +706,6 @@ const History: React.FC<HistoryProps> = ({
     </div>
   );
 };
+
 
 export default History;
