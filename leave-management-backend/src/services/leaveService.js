@@ -53,11 +53,19 @@ export const getUserStats = async (req, res) => {
   }
 };
 
-export const createNotification = async (userId, message) => {
+export const createNotification = async (userId, message, leaveId = null) => {
+  const data = {
+    user_id: userId,
+    message,
+  };
+  if (leaveId !== null) {
+    data.leaveId = leaveId;  // Optional leaveId
+  }
   return await prisma.notification.create({
     data,
   });
 };
+
 
 // Update leave status and adjust used leaves accordingly
 export const updateLeaveStatus = async (leave_id, status) => {
