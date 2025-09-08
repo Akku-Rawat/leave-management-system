@@ -71,39 +71,40 @@ const History: React.FC<HistoryProps> = ({
 
 
       const mappedData = data.map((item: any) => {
-        let appliedDate;
-        if (item.created_at && !isNaN(new Date(item.created_at).getTime())) {
-          const createdDate = new Date(item.created_at);
-          appliedDate = createdDate.toLocaleDateString("en-GB", {
-            timeZone: "Asia/Kolkata",
-            day: "2-digit",
-            month: "2-digit",
-            year: "numeric"
-          });
-        } else {
-          appliedDate = new Date().toLocaleDateString("en-GB");
-        }
+  let appliedDate;
+  if (item.created_at && !isNaN(new Date(item.created_at).getTime())) {
+    const createdDate = new Date(item.created_at);
+    appliedDate = createdDate.toLocaleDateString("en-GB", {
+      timeZone: "Asia/Kolkata",
+      day: "2-digit",
+      month: "2-digit",
+      year: "numeric"
+    });
+  } else {
+    appliedDate = new Date().toLocaleDateString("en-GB");
+  }
 
-
-        return {
-          id: item.leave_id,
-          userId: item.user_id,
-          employeeId: item.user_id,
-          start_date: item.start_date,
-          end_date: item.end_date,
-          type: item.type,
-          reason: item.reason,
-          status: capitalizeFirstLetter(item.status), // To keep uniform case like "Approved"
-          employeeName: item.user?.name || "Unknown",
-          date: appliedDate,
-          created_at: item.created_at,
-          days:
-            Math.ceil(
-              (new Date(item.end_date).getTime() - new Date(item.start_date).getTime()) /
-                (1000 * 60 * 60 * 24)
-            ) + 1
-        };
-      });
+  return {
+    id: item.leave_id,
+    userId: item.user_id,
+    employeeId: item.user_id,
+    start_date: item.start_date,
+    end_date: item.end_date,
+    type: item.type,
+    reason: item.reason,
+    status: capitalizeFirstLetter(item.status),
+    employeeName: item.user?.name || "Unknown",
+    date: appliedDate,
+    created_at: item.created_at,
+   days:
+  (item.duration === "first" || item.duration === "second")
+    ? 0.5
+    : Math.ceil(
+        (new Date(item.end_date).getTime() - new Date(item.start_date).getTime()) /
+        (1000 * 60 * 60 * 24)
+      ) + 1
+  };
+});
 
 
       if (userRole === "hr" && viewMode === "all") {

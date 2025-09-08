@@ -85,20 +85,21 @@ const Header: React.FC<HeaderProps> = ({ currentUser, onLogout, onNavigate }) =>
   const settingsRef = React.useRef<HTMLButtonElement | null>(null);
   const profileRef = React.useRef<HTMLButtonElement | null>(null);
 
-  const refreshNotifications = async () => {
-    try {
-      const token = localStorage.getItem("token") ?? undefined;
-      const data = await getNotifications(token);
-      data.sort(
-  (a: { id: number; message: string; time: string }, b: { id: number; message: string; time: string }) =>
-    new Date(b.time).getTime() - new Date(a.time).getTime()
-);
+const refreshNotifications = async () => {
+  try {
+    const token = localStorage.getItem("token") ?? undefined;
+    const data = await getNotifications(token);
+    data.sort(
+      (a: { id: number; message: string; time: string }, b: { id: number; message: string; time: string }) =>
+        new Date(b.time).getTime() - new Date(a.time).getTime()
+    );
+    setNotifications(data); // <-- Yeh line zaroori hai
+  } catch (error) {
+    console.error("Error fetching notifications:", error);
+    setNotifications([]);
+  }
+};
 
-    } catch (error) {
-      console.error("Error fetching notifications:", error);
-      setNotifications([]);
-    }
-  };
 
   useEffect(() => {
     refreshNotifications();
@@ -166,6 +167,18 @@ const Header: React.FC<HeaderProps> = ({ currentUser, onLogout, onNavigate }) =>
       console.error("Error marking notification as read:", error);
     }
   };
+
+  // Notification click handler add karein
+// const handleNotificationClick = (notif: { id: number; leaveId?: number }) => {
+//   handleMarkAsRead(notif.id); // Notification read mark karein
+
+//   if (notif.leaveId) {
+//     onNavigate?.(`/history/leave/${notif.leaveId}`);  // Leave detail page par navigate
+//   } else {
+//     onNavigate?.("/history");  // General history page
+//   }
+// };
+
 
   const notificationIconSize = 25;
   const iconSize = 30;

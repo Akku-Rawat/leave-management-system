@@ -42,6 +42,7 @@ model LeaveRequest {
   type        String
   reason      String?       @db.Text
   status      Status        @default(pending)
+  duration    String? 
   LeaveAction LeaveAction[]
   created_at  DateTime      @default(now())
 }

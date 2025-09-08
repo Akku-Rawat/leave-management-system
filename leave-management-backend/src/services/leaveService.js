@@ -9,7 +9,8 @@ export const applyLeave = async (data, user) => {
       end_date: new Date(data.endDate),
       reason: data.reason || null,
       type: data.type,
-      status: "pending", // initially pending
+      status: "pending",
+      duration: data.duration || null,
     },
   });
   await sendLeaveMail(leave, user);
@@ -54,10 +55,7 @@ export const getUserStats = async (req, res) => {
 
 export const createNotification = async (userId, message) => {
   return await prisma.notification.create({
-    data: {
-      user_id: userId,
-      message,
-    },
+    data,
   });
 };
 
