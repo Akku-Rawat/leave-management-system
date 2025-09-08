@@ -104,3 +104,25 @@ export const createUser = async (req, res) => {
     res.status(500).json({ error: 'Internal server error' });
   }
 };
+export const getUserList = async (req, res) => {
+  try {
+    // Only allow HR or Boss to fetch user list
+    if (req.user.role !== "hr" && req.user.role !== "boss") {
+      return res.status(403).json({ message: "Forbidden" });
+    }
+
+    const users = await prisma.user.findMany({
+      select: {
+        user_id: true,
+        name: true,
+        email: true,
+        role: {
+          select: { role_name: true },
+        },
+      },
+    });
+    res.json(users);
+  } catch (error) {
+    res.status(500).json({ error: "Failed to fetch users" });
+  }
+};

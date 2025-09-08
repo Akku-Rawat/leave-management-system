@@ -275,7 +275,7 @@ export async function addUser(
   role_id: number,
   token?: string
 ) {
-  const res = await fetch(`${API_URL}/api/user/add`, {
+  const res = await fetch(`${API_URL}/user/add`, {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
@@ -292,7 +292,7 @@ export async function changePassword(
   newPassword: string,
   token?: string
 ) {
-  const res = await fetch(`${API_URL}/api/user/change-password`, {
+  const res = await fetch(`${API_URL}/user/change-password`, {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
@@ -314,7 +314,7 @@ export async function updateUser(
   token?: string
 ) {
   const API_URL = import.meta.env.VITE_API_URL;
-  const res = await fetch(`${API_URL}/api/user/${userId}`, {  // Adjust endpoint as needed
+  const res = await fetch(`${API_URL}/user/${userId}`, {  // Adjust endpoint as needed
     method: "PUT",
     headers: {
       "Content-Type": "application/json",
@@ -329,7 +329,7 @@ export async function updateUser(
 // Delete a user
 export async function deleteUser(userId: string, token?: string) {
   const API_URL = import.meta.env.VITE_API_URL;
-  const res = await fetch(`${API_URL}/api/user/${userId}`, {  // Adjust endpoint as needed
+  const res = await fetch(`${API_URL}/user/${userId}`, {  // Adjust endpoint as needed
     method: "DELETE",
     headers: {
       ...(token ? { Authorization: `Bearer ${token}` } : {}),
