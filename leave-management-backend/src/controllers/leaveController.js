@@ -303,19 +303,3 @@ export const sendCustomLeaveMessage = async (req, res) => {
 
 
 
-export const sendCustomMessageEmail = async (leave, user, message) => {
-  const messageUrl = `${process.env.BASE_URL}/your-message-view-path/${leave.leave_id}`;
-
-  const mailOptions = {
-    from: process.env.EMAIL_USER,
-    to: user.email,  // employee email
-    subject: `Message from HR regarding your leave request`,
-    html: `
-      <h3>Message from HR</h3>
-      <p>${message}</p>
-      <p><a href="${messageUrl}" style="padding:10px;background:blue;color:white;text-decoration:none;">View Message</a></p>
-    `,
-  };
-
-  await transporter.sendMail(mailOptions);
-};
