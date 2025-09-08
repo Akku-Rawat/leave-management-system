@@ -114,13 +114,12 @@ export const rejectLeave = async (req, res) => {
 // New controller: Get all leave requests for HR
 export const getAllLeaveRequests = async (req, res) => {
   try {
-    // Role check, allow only hr or boss
     if (req.user.role !== "hr" && req.user.role !== "boss") {
       return res.status(403).json({ message: "Forbidden: Access denied" });
     }
 
-    // Fetch all leaves with user details
     const leaves = await prisma.leaveRequest.findMany({
+      where: { status: "pending" },
       include: {
         user: true,
       },
@@ -134,6 +133,7 @@ export const getAllLeaveRequests = async (req, res) => {
     res.status(500).json({ error: error.message });
   }
 };
+
 
 export const handleLeaveAction = async (req, res) => {
   const { token } = req.query;

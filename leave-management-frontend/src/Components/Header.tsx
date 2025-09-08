@@ -5,7 +5,7 @@ import { FaCog, FaBell, FaUserCircle } from "react-icons/fa";
 import {
   getUserInfo,
   getUserList,
-  getNotifications,
+  getUnreadNotifications,
   markNotificationAsRead,
 } from "../services/api";
 
@@ -88,19 +88,19 @@ const Header: React.FC<HeaderProps> = ({ currentUser, onLogout, onNavigate }) =>
 const refreshNotifications = async () => {
   try {
     const token = localStorage.getItem("token") ?? undefined;
-    const data = await getNotifications(token);
+    const data = await getUnreadNotifications(token); // unread endpoint use karo
     data.sort(
-      (a: { id: number; message: string; time: string }, b: { id: number; message: string; time: string }) =>
-        new Date(b.time).getTime() - new Date(a.time).getTime()
-    );
-    setNotifications(data); // <-- Yeh line zaroori hai
+  (a: { id: number; message: string; time: string }, b: { id: number; message: string; time: string }) =>
+    new Date(b.time).getTime() - new Date(a.time).getTime()
+);
+
+
+    setNotifications(data);
   } catch (error) {
     console.error("Error fetching notifications:", error);
     setNotifications([]);
   }
 };
-
-
   useEffect(() => {
     refreshNotifications();
   }, []);
@@ -158,26 +158,18 @@ const refreshNotifications = async () => {
     }
   };
 
-  const handleMarkAsRead = async (notificationId: number) => {
-    try {
-      const token = localStorage.getItem("token") ?? undefined;
-      await markNotificationAsRead(notificationId, token);
-      setNotifications((prev) => prev.filter((notif) => notif.id !== notificationId));
-    } catch (error) {
-      console.error("Error marking notification as read:", error);
+const handleNotificationClick = async (notif: { id: number; leaveId?: number }) => {
+  try {
+    const token = localStorage.getItem("token") ?? undefined;
+    await markNotificationAsRead(notif.id, token);
+    setNotifications(prev => prev.filter(n => n.id !== notif.id));  // Turant notification hatao
+    if (notif.leaveId) {
+      onNavigate?.(`/history/leave/${notif.leaveId}`); // Optional: notification se related leave pe navigation
     }
-  };
-
-  // Notification click handler add karein
-// const handleNotificationClick = (notif: { id: number; leaveId?: number }) => {
-//   handleMarkAsRead(notif.id); // Notification read mark karein
-
-//   if (notif.leaveId) {
-//     onNavigate?.(`/history/leave/${notif.leaveId}`);  // Leave detail page par navigate
-//   } else {
-//     onNavigate?.("/history");  // General history page
-//   }
-// };
+  } catch (error) {
+    console.error("Failed to mark notification as read:", error);
+  }
+};
 
 
   const notificationIconSize = 25;
@@ -228,16 +220,17 @@ const refreshNotifications = async () => {
                   {notifications.length === 0 ? (
                     <div className="p-4 text-center text-gray-500 text-sm">No new notifications</div>
                   ) : (
-                    notifications.map((notif) => (
+                   notifications.map((notif) => (
                       <div
-                        key={notif.id}
-                        className="p-2 border-b hover:bg-gray-50 cursor-pointer"
-                        onClick={() => handleMarkAsRead(notif.id)}
-                      >
-                        <p className="text-sm text-gray-800">{notif.message}</p>
-                        <p className="text-xs text-gray-500">{notif.time}</p>
-                      </div>
-                    ))
+                                        key={notif.id}
+                     className="p-2 border-b hover:bg-gray-50 cursor-pointer"
+                     onClick={() => handleNotificationClick(notif)}
+                          >
+                     <p className="text-sm text-gray-800">{notif.message}</p>
+                   <p className="text-xs text-gray-500">{notif.time}</p>
+                </div>
+                 ))
+
                   )}
                 </div>
               </DropdownPortal>

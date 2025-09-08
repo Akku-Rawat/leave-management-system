@@ -57,6 +57,9 @@ export interface LeaveRequestFormData {
   emergencyContact: string;
 }
 
+export interface LeaveWithDuration extends LeaveRequestType {
+  duration?: Duration;
+}
 // ---------------- LEAVE REQUEST PROPS ----------------
 export interface LeaveRequestProps {
   onSubmit: (data: LeaveRequestFormData) => void;

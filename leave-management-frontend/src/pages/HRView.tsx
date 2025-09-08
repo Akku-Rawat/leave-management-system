@@ -22,39 +22,44 @@ const HRView: React.FC = () => {
     }
     fetchRequests();
   }, []);
-
-  const handleAction = async (leave_id: string, action: "approved" | "rejected") => {
-    try {
-      // Start removal animation
-      setRemovingIds((ids) => [...ids, leave_id]);
-      const token = localStorage.getItem("token") || undefined;
-      if (action === "approved") {
-        await approveLeave(leave_id, token); // ✅ api.ts
-      } else {
-        await rejectLeave(leave_id, token); // ✅ api.ts
-      }
-      // Wait for animation duration before removing from state
-      setTimeout(() => {
-        setRequests((prev) => prev.filter((req) => req.leave_id !== leave_id));
-        setRemovingIds((ids) => ids.filter((id) => id !== leave_id));
-      }, 400); // match with CSS transition duration
-    } catch (error) {
-      alert("Failed to update status: " + error);
-      setRemovingIds((ids) => ids.filter((id) => id !== leave_id)); // reset if error
+const handleAction = async (leave_id: string, action: "approved" | "rejected") => {
+  try {
+    // Start removal animation
+    setRemovingIds((ids) => [...ids, leave_id]);
+    const token = localStorage.getItem("token") || undefined;
+    console.log("Approving/rejecting:", leave_id, action);
+    if (action === "approved") {
+      await approveLeave(leave_id, token); 
+    } else {
+      await rejectLeave(leave_id, token); 
     }
-  };
+    // Wait for animation duration before removing from state
+    setTimeout(() => {
+      setRequests((prev) => prev.filter((req) => req.leave_id !== leave_id));
+      setRemovingIds((ids) => ids.filter((id) => id !== leave_id));
+    }, 400); // match with CSS transition duration
+  } catch (error) {
+    alert("Failed to update status: " + error);
+    setRemovingIds((ids) => ids.filter((id) => id !== leave_id)); // reset if error
+  }
+}
+
 
   const handleSendMessage = async (leave_id: string) => {
-    try {
-      const token = localStorage.getItem("token") || undefined;
-      await sendMessage(leave_id, customMessage, token); // ✅ api.ts
-      alert("Message sent successfully");
-      setShowMessageBox(null);
-      setCustomMessage("");
-    } catch (error) {
-      alert("Error sending message: " + error);
-    }
-  };
+  try {
+    const token = localStorage.getItem("token") || undefined;
+    await sendMessage(leave_id, customMessage, token);
+    alert("Message sent successfully");
+    setShowMessageBox(null);
+    setCustomMessage("");
+
+    // Remove request from list if you want
+    setRequests(prev => prev.filter(req => req.leave_id !== leave_id));
+  } catch (error) {
+    alert("Error sending message: " + error);
+  }
+};
+
 
   return (
     <div className="h-full overflow-hidden bg-gradient-to-br from-gray-50 via-blue-50 to-white p-6">

@@ -323,3 +323,13 @@ export async function deleteUser(userId: string, token?: string) {
   if (!res.ok) throw new Error("Failed to delete user");
   return res.json();
 }
+
+
+export async function getUnreadNotifications(token?: string) {
+  const API_URL = import.meta.env.VITE_API_URL;
+  const res = await fetch(`${API_URL}/notifications/unread`, {
+    headers: token ? { Authorization: `Bearer ${token}` } : {},
+  });
+  if (!res.ok) throw new Error("Failed to fetch unread notifications");
+  return res.json();
+}

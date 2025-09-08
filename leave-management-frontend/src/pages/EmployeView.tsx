@@ -13,7 +13,7 @@ import EncashmentModal from "./EncashmentModal";
 import { useNavigate } from "react-router-dom";
 import { getMyLeaves, getStats, createLeave, encashLeaves } from "../services/api";
 
-
+import type { LeaveWithDuration } from "../Types";
 
 
 
@@ -66,22 +66,28 @@ const EmployeeView: React.FC<LeaveRequestProps> = ({ onSubmit }) => {
   };
 
 useEffect(() => {
-  async function fetchData() {
-    try {
-      const token = localStorage.getItem("token") ?? undefined;
-      const leavesJson = await getMyLeaves(token);
-      setLeaves(leavesJson);
+ async function fetchData() {
+  try {
+    const token = localStorage.getItem("token") ?? undefined;
+    const leavesJson = await getMyLeaves(token);
+    setLeaves(leavesJson);
 
-      const statsJson = await getStats(token);
-      setUserData({
-        totalLeaves: statsJson.totalLeaves,
-        usedLeaves: statsJson.usedLeaves,
-        pendingLeaves: statsJson.pendingLeaves,
-      });
-    } catch (error) {
-      console.error("Error fetching data", error);
-    }
+    // Backend stats fetch
+    const statsJson = await getStats(token);
+
+    // Frontend usedLeaves calculate
+    const usedLeaves = calculateUsedLeaves(leavesJson);
+
+    setUserData({
+      totalLeaves: statsJson.totalLeaves,
+      usedLeaves,  // now this is accurate for half-day leaves
+      pendingLeaves: statsJson.pendingLeaves,
+    });
+  } catch (error) {
+    console.error("Error fetching data", error);
   }
+}
+
   fetchData();
 }, []);
 const handleEncash = async (action: "carry_forward" | "cash_encash") => {
@@ -100,6 +106,24 @@ const handleEncash = async (action: "carry_forward" | "cash_encash") => {
     alert(`Encashment failed: ${e.response?.data?.error || e.message}`);
   }
 };
+
+
+
+
+const calculateUsedLeaves = (leaves: LeaveWithDuration[]): number => {
+  return leaves
+    .filter(l => l.status === "approved")
+    .reduce((acc, l) => {
+      if (l.duration === "first" || l.duration === "second") {
+        return acc + 0.5;
+      }
+      const start = new Date(l.start_date);
+      const end = new Date(l.end_date);
+      const days = Math.ceil((end.getTime() - start.getTime()) / (1000 * 60 * 60 * 24)) + 1;
+      return acc + days;
+    }, 0);
+};
+
 
   const handleRangeSelect = (range: { from?: Date; to?: Date } | undefined) => {
     if (!range) return;
