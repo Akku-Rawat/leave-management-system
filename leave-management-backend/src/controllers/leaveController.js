@@ -2,6 +2,7 @@ import { applyLeave, updateLeaveStatus } from "../services/leaveService.js";
 import prisma from "../../prisma/client.js";
 import jwt from 'jsonwebtoken';
 import { withdrawLeave ,getRemainingLeaveBalance,processLeaveEncashment } from '../services/leaveService.js';
+import { sendCustomMessageEmail } from './emailService.js';
 
 // Leave Request Create
 export const createLeave = async (req, res) => {
@@ -243,7 +244,6 @@ export const submitEncashment = async (req, res) => {
 };
 
 
-
 export const sendCustomLeaveMessage = async (req, res) => {
   try {
     const leaveId = parseInt(req.params.id);
@@ -264,25 +264,58 @@ export const sendCustomLeaveMessage = async (req, res) => {
       },
     });
 
-    // Find the employee user who owns this leave
+    // Fetch the leave request first
     const leave = await prisma.leaveRequest.findUnique({
       where: { leave_id: leaveId },
     });
 
-    // Create a notification for that user
-    if (leave) {
-      await prisma.notification.create({
-        data: {
-          user_id: leave.user_id, // employee receiving notification
-          message: `HR sent you a message regarding your leave: ${message}`,
-          read: false,
-          time: new Date(),
-        },
-      });
+    if (!leave) {
+      return res.status(404).json({ error: "Leave request not found." });
     }
+
+    // Fetch the user who owns the leave
+    const user = await prisma.user.findUnique({
+      where: { user_id: leave.user_id },
+    });
+
+    if (!user) {
+      return res.status(404).json({ error: "User not found." });
+    }
+
+    // Send custom message email to employee
+    await sendCustomMessageEmail(leave, user, message);
+
+    // Create a notification for that user
+    await prisma.notification.create({
+      data: {
+        user_id: leave.user_id,
+        message: `HR sent you a message regarding your leave: ${message}`,
+        read: false,
+        time: new Date(),
+      },
+    });
 
     return res.json({ success: true, message: "Custom message sent to employee." });
   } catch (error) {
     return res.status(500).json({ error: error.message });
   }
+};
+
+
+
+export const sendCustomMessageEmail = async (leave, user, message) => {
+  const messageUrl = `${process.env.BASE_URL}/your-message-view-path/${leave.leave_id}`;
+
+  const mailOptions = {
+    from: process.env.EMAIL_USER,
+    to: user.email,  // employee email
+    subject: `Message from HR regarding your leave request`,
+    html: `
+      <h3>Message from HR</h3>
+      <p>${message}</p>
+      <p><a href="${messageUrl}" style="padding:10px;background:blue;color:white;text-decoration:none;">View Message</a></p>
+    `,
+  };
+
+  await transporter.sendMail(mailOptions);
 };

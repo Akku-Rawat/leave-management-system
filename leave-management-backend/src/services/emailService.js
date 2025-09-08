@@ -18,7 +18,6 @@ const messageToken = generateActionToken(leave.leave_id, 'message');
 
 const approveUrl = `${process.env.BASE_URL}/api/leaves/action?token=${approveToken}`;
 const rejectUrl = `${process.env.BASE_URL}/api/leaves/action?token=${rejectToken}`;
-
 const messageUrl = `${process.env.BASE_URL}/api/leaves/action?token=${messageToken}`;
 
   const mailOptions = {
@@ -35,8 +34,26 @@ const messageUrl = `${process.env.BASE_URL}/api/leaves/action?token=${messageTok
       <br>
       <a href="${approveUrl}" style="padding:10px;background:green;color:white;text-decoration:none;">Approve</a>
       <a href="${rejectUrl}" style="padding:10px;background:red;color:white;text-decoration:none;">Reject</a>
-      <a href="${messageUrl} style="padding:10px;background:red;color:white;text-decoration:none,">Send Message</a>
+      <a href="${messageUrl}" style="padding:10px;background:blue;color:white;text-decoration:none;">Send Message</a>
     `,
   };
+  await transporter.sendMail(mailOptions);
+};
+
+
+export const sendCustomMessageEmail = async (leave, user, message) => {
+  const messageUrl = `${process.env.BASE_URL}/your-message-view-path/${leave.leave_id}`;
+
+  const mailOptions = {
+    from: process.env.EMAIL_USER,
+    to: user.email,  // employee email
+    subject: `Message from HR regarding your leave request`,
+    html: `
+      <h3>Message from HR</h3>
+      <p>${message}</p>
+      <p><a href="${messageUrl}" style="padding:10px;background:blue;color:white;text-decoration:none;">View Message</a></p>
+    `,
+  };
+
   await transporter.sendMail(mailOptions);
 };
