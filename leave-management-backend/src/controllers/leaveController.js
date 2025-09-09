@@ -254,7 +254,6 @@ export const sendCustomLeaveMessage = async (req, res) => {
       return res.status(400).json({ error: "Message is required." });
     }
 
-    // Save message as a LeaveAction with 'custom_message' status
     await prisma.leaveAction.create({
       data: {
         leave_id: leaveId,
@@ -264,7 +263,6 @@ export const sendCustomLeaveMessage = async (req, res) => {
       },
     });
 
-    // Fetch the leave request first
     const leave = await prisma.leaveRequest.findUnique({
       where: { leave_id: leaveId },
     });
@@ -273,7 +271,6 @@ export const sendCustomLeaveMessage = async (req, res) => {
       return res.status(404).json({ error: "Leave request not found." });
     }
 
-    // Fetch the user who owns the leave
     const user = await prisma.user.findUnique({
       where: { user_id: leave.user_id },
     });
@@ -282,10 +279,8 @@ export const sendCustomLeaveMessage = async (req, res) => {
       return res.status(404).json({ error: "User not found." });
     }
 
-    // Send custom message email to employee
     await sendCustomMessageEmail(leave, user, message);
 
-    // Create a notification for that user
     await prisma.notification.create({
       data: {
         user_id: leave.user_id,
@@ -300,6 +295,3 @@ export const sendCustomLeaveMessage = async (req, res) => {
     return res.status(500).json({ error: error.message });
   }
 };
-
-
-

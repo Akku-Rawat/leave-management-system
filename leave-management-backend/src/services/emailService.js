@@ -14,7 +14,7 @@ const transporter = nodemailer.createTransport({
 export const sendLeaveMail = async (leave, user) => {
  const approveToken = generateActionToken(leave.leave_id, 'approved');
 const rejectToken = generateActionToken(leave.leave_id, 'rejected');
-const messageToken = generateActionToken(leave.leave_id, 'message');
+const messageToken = generateActionToken(leave.leave_id, 'custom_message');
 
 const approveUrl = `${process.env.BASE_URL}/api/leaves/action?token=${approveToken}`;
 const rejectUrl = `${process.env.BASE_URL}/api/leaves/action?token=${rejectToken}`;
@@ -42,7 +42,7 @@ const messageUrl = `${process.env.BASE_URL}/api/leaves/action?token=${messageTok
 
 
 export const sendCustomMessageEmail = async (leave, user, message) => {
-  const messageToken = generateActionToken(leave.leave_id, 'message');
+  const messageToken = generateActionToken(leave.leave_id, 'custom_message');
   const messageUrl = `${process.env.BASE_URL}/api/leaves/action?token=${messageToken}`;
   const mailOptions = {
     from: process.env.EMAIL_USER,

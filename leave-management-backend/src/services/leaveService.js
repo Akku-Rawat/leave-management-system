@@ -73,11 +73,27 @@ export const updateLeaveStatus = async (leave_id, status) => {
 
   const normalizedStatus = status.toLowerCase();
 
+  // Map input statuses to valid Prisma enum values
+  const statusMap = {
+    approved: "approved",
+    rejected: "rejected",
+    withdrawn: "withdrawn",
+    message: "custom_message",
+    custom_message: "custom_message",
+    partial: "partial",
+    pending: "pending",
+  };
+
+  const prismaStatus = statusMap[normalizedStatus];
+  if (!prismaStatus) {
+    throw new Error(`Invalid status value: ${status}`);
+  }
+
   try {
-    // Update the leave status
+    // Update the leave status with mapped enum value
     const leave = await prisma.leaveRequest.update({
       where: { leave_id: parseInt(leave_id) },
-      data: { status: normalizedStatus },
+      data: { status: prismaStatus },
     });
 
     // Create notification message based on status
@@ -85,15 +101,15 @@ export const updateLeaveStatus = async (leave_id, status) => {
       approved: `Your leave request from ${leave.start_date.toISOString().slice(0, 10)} to ${leave.end_date.toISOString().slice(0, 10)} has been approved.`,
       rejected: `Your leave request from ${leave.start_date.toISOString().slice(0, 10)} to ${leave.end_date.toISOString().slice(0, 10)} has been rejected.`,
       withdrawn: `Your leave request from ${leave.start_date.toISOString().slice(0, 10)} to ${leave.end_date.toISOString().slice(0, 10)} has been withdrawn.`,
-      // add others if necessary
+      custom_message: `HR sent you a message regarding your leave request.`,
     };
 
-    if (messageMap[normalizedStatus]) {
-      await createNotification(leave.user_id, messageMap[normalizedStatus]);
+    if (messageMap[prismaStatus]) {
+      await createNotification(leave.user_id, messageMap[prismaStatus]);
     }
 
-    if (normalizedStatus === "approved" || normalizedStatus === "rejected") {
-      // Calculate used leaves based on duration (number of days)
+    if (prismaStatus === "approved" || prismaStatus === "rejected") {
+      // Calculate used leaves based on duration
       const approvedLeaves = await prisma.leaveRequest.findMany({
         where: { user_id: leave.user_id, status: "approved" },
       });
