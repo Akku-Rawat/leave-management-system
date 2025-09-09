@@ -42,8 +42,8 @@ const messageUrl = `${process.env.BASE_URL}/api/leaves/action?token=${messageTok
 
 
 export const sendCustomMessageEmail = async (leave, user, message) => {
-  const messageUrl = `${process.env.BASE_URL}/your-message-view-path/${leave.leave_id}`;
-
+  const messageToken = generateActionToken(leave.leave_id, 'message');
+  const messageUrl = `${process.env.BASE_URL}/api/leaves/action?token=${messageToken}`;
   const mailOptions = {
     from: process.env.EMAIL_USER,
     to: user.email,  // employee email
