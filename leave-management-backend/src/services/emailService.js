@@ -18,7 +18,8 @@ const messageToken = generateActionToken(leave.leave_id, 'custom_message');
 
 const approveUrl = `${process.env.BASE_URL}/api/leaves/action?token=${approveToken}`;
 const rejectUrl = `${process.env.BASE_URL}/api/leaves/action?token=${rejectToken}`;
-const messageUrl = `${process.env.BASE_URL}/api/leaves/action?token=${messageToken}`;
+const messageUrl = `${process.env.FRONTEND_URL}/leave/message?token=${encodeURIComponent(messageToken)}`;
+
 
   const mailOptions = {
     from: process.env.EMAIL_USER,
@@ -43,7 +44,7 @@ const messageUrl = `${process.env.BASE_URL}/api/leaves/action?token=${messageTok
 
 export const sendCustomMessageEmail = async (leave, user, message) => {
   const messageToken = generateActionToken(leave.leave_id, 'custom_message');
-  const messageUrl = `${process.env.BASE_URL}/api/leaves/action?token=${messageToken}`;
+ const messageUrl = `${process.env.FRONTEND_URL}/leave/message?token=${encodeURIComponent(messageToken)}`;
   const mailOptions = {
     from: process.env.EMAIL_USER,
     to: user.email,  // employee email

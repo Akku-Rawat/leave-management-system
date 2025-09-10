@@ -4,7 +4,7 @@ import { Routes, Route, Navigate, useNavigate } from "react-router-dom";
 
 import Header from "./components/Header";
 import Sidebar from "./components/Sidebar";
-
+import LeaveCustomMessagePage from "./pages/LeaveCustomMessagePage";
 import LoginPage from "./pages/loginpage";
 import LeaveRequest from "./pages/LeaveRequest";
 import History from "./pages/History";
@@ -255,6 +255,7 @@ const handleLogin = (user: User) => {
                 </RequireAuth>
               }
             />
+             <Route path="/leave/message" element={<LeaveCustomMessagePage />} />
             <Route path="*" element={<Navigate to="/apply" replace />} />
           </Routes>
         </main>
