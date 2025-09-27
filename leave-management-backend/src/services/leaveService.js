@@ -2,19 +2,31 @@ import prisma from "../../prisma/client.js";
 import { sendLeaveMail } from "./emailService.js";
 
 export const applyLeave = async (data, user) => {
-  const leave = await prisma.leaveRequest.create({
-    data: {
-      user_id: user.user_id,
-      start_date: new Date(data.startDate),
-      end_date: new Date(data.endDate),
-      reason: data.reason || null,
-      type: data.type,
-      status: "pending",
-      duration: data.duration || null,
-    },
-  });
-  await sendLeaveMail(leave, user);
-  return leave;
+  try {
+    const leave = await prisma.leaveRequest.create({
+      data: {
+        user_id: user.user_id,
+        start_date: new Date(data.startDate),
+        end_date: new Date(data.endDate),
+        reason: data.reason || null,
+        type: data.type,
+        status: "pending",
+        duration: data.duration || null,
+      },
+    });
+
+    try {
+      await sendLeaveMail(leave, user);
+    } catch (emailErr) {
+      console.error("Error sending leave email:", emailErr);
+      // Optionally continue without throwing, so leave creation succeeds
+    }
+
+    return leave;
+  } catch (err) {
+    console.error("Error applying leave:", err); // Log the error fully
+    throw err; // Rethrow to be handled upstream (controller)
+  }
 };
 
 // Get user leave statistics

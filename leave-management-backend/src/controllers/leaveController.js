@@ -15,13 +15,18 @@ export const createLeave = async (req, res) => {
       return res.status(404).json({ error: "User not found" });
     }
 
+    // Add this line here to log request data received from frontend
+    console.log("Leave creation request body:", req.body);
+
     const leave = await applyLeave(req.body, user);
 
     res.json({ success: true, leave });
   } catch (err) {
+    console.error("Leave creation error:", err);  // Log full error
     res.status(500).json({ error: err.message });
   }
 };
+
 
 // Logged-in user Leave records Fetch
 export const getMyLeaves = async (req, res) => {
